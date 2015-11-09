@@ -169,7 +169,7 @@ namespace StellaStreams
             var lastMessage = _cachedMessages.Last;
             var lastColdMessage = _coldCache.Last;
             // Check to see if offset is too old to be in cache
-            if ((lastMessage == null || sequenceToken.Older(lastMessage.Value.SequenceToken)) && ((lastMessage == null) || sequenceToken.Older(lastColdMessage.Value.SequenceToken)))
+            if ((lastMessage == null || sequenceToken.Older(lastMessage.Value.SequenceToken)) && ((lastColdMessage == null) || sequenceToken.Older(lastColdMessage.Value.SequenceToken)))
             {
                 // throw cache miss exception
                 //throw new QueueCacheMissException(sequenceToken, _cachedMessages.Last.Value.SequenceToken, _cachedMessages.First.Value.SequenceToken);
