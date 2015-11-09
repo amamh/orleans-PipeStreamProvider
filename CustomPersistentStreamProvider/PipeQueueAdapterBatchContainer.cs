@@ -16,8 +16,8 @@ namespace StellaStreams
 
         public EventSequenceToken EventSequenceToken { get; set; }
 
-        public Guid StreamGuid { get; private set; }
-        public string StreamNamespace { get; private set; }
+        public Guid StreamGuid { get; }
+        public string StreamNamespace { get; }
 
         public StreamSequenceToken SequenceToken
         {

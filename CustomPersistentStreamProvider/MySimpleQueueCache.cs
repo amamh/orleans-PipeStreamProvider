@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
 using Orleans.Streams;
@@ -45,9 +46,13 @@ namespace StellaStreams
         private int _maxColdCacheSize = 1024;
         private const int NumCacheHistogramBuckets = 100;
 
-        public QueueId Id { get; private set; }
+        public QueueId Id { get; }
 
-        public int Size => _cachedMessages.Count;
+        internal EventSequenceToken OldestPossibleToken { get; } = new EventSequenceToken(0);
+        internal SimpleQueueCacheItem? OldestMessage => _coldCache?.Last?.Value ?? _cachedMessages?.Last?.Value;
+        internal SimpleQueueCacheItem? LastMessage => _cachedMessages?.First?.Value ?? _coldCache?.First?.Value;
+
+        public int Size => _cachedMessages.Count + _coldCache.Count;
 
         public int MaxAddCount { get; }
 
@@ -144,37 +149,38 @@ namespace StellaStreams
         internal void InitializeCursor(MySimpleQueueCacheCursor cursor, StreamSequenceToken sequenceToken)
         {
             Log(_logger, "InitializeCursor: {0} to sequenceToken {1}", cursor, sequenceToken);
-
-            if (_cachedMessages.Count == 0) // nothing in cache
+            // if offset is not set or there is nothing in cache anyway, iterate from newest (first) message in cache, but not including the first message itself
+            if (sequenceToken == null || (_cachedMessages.Count == 0 && _coldCache.Count == 0))
             {
-                var tokenToReset = sequenceToken ?? ((EventSequenceToken) _lastSequenceTokenAddedToCache)?.NextSequenceNumber();
+                var tokenToReset = ((EventSequenceToken)_lastSequenceTokenAddedToCache)?.NextSequenceNumber();
                 ResetCursor(cursor, tokenToReset);
                 return;
             }
 
-            // if offset is not set, iterate from newest (first) message in cache, but not including the first message itself
-            if (sequenceToken == null)
-            {
-                StreamSequenceToken tokenToReset = ((EventSequenceToken) _lastSequenceTokenAddedToCache)?.NextSequenceNumber();
-                ResetCursor(cursor, tokenToReset);
-                return;
-            }
+            // Can't ask for < 0
+            if (sequenceToken.Older(OldestPossibleToken))
+                throw new QueueCacheMissException($"Requested token is too old: {sequenceToken}. You cannot request earlier than: {OldestPossibleToken}");
 
-            if (sequenceToken.Newer(_cachedMessages.First.Value.SequenceToken)) // sequenceId is too new to be in cache
+
+            // sequenceId is too new to be in cache
+            var lastToken = LastMessage?.SequenceToken;
+            if (lastToken == null || sequenceToken.Newer(lastToken))
             {
                 ResetCursor(cursor, sequenceToken);
                 return;
             }
 
-            var lastMessage = _cachedMessages.Last;
-            var lastColdMessage = _coldCache.Last;
             // Check to see if offset is too old to be in cache
-            if ((lastMessage == null || sequenceToken.Older(lastMessage.Value.SequenceToken)) && ((lastColdMessage == null) || sequenceToken.Older(lastColdMessage.Value.SequenceToken)))
+            var firstToken = OldestMessage?.SequenceToken;
+            // sanity check:
+            Debug.Assert(firstToken == null || firstToken.Equals(OldestPossibleToken));
+            if (firstToken == null)
             {
-                // throw cache miss exception
-                //throw new QueueCacheMissException(sequenceToken, _cachedMessages.Last.Value.SequenceToken, _cachedMessages.First.Value.SequenceToken);
-                throw new QueueCacheMissException(sequenceToken, _coldCache.Last.Value.SequenceToken, _cachedMessages.First.Value.SequenceToken);
+                ResetCursor(cursor, sequenceToken);
+                return;
             }
+            if (sequenceToken.Older(firstToken))
+                throw new QueueCacheMissException($"Requested token is too old: {sequenceToken}. Oldest available is: {firstToken}");
 
             LinkedListNode<SimpleQueueCacheItem> node;
             if (Within(sequenceToken, _cachedMessages))
@@ -376,8 +382,11 @@ namespace StellaStreams
             //if(logger.IsInfo) logger.Info(format, args);
         }
 
-        internal static bool Within(StreamSequenceToken token, LinkedList<SimpleQueueCacheItem> queue)
+        static private bool Within(StreamSequenceToken token, LinkedList<SimpleQueueCacheItem> queue)
         {
+            if (queue.Count == 0)
+                return false;
+
             var oldest = queue.Last.Value.SequenceToken;
             var earliest = queue.First.Value.SequenceToken;
 

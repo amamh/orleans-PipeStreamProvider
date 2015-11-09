@@ -55,8 +55,8 @@ namespace StellaStreams
             return new PipeQueueAdapterReceiver(queueId, _queues);
         }
 
-        public string Name { get; private set; }
-        public bool IsRewindable { get; private set; } = true;
+        public string Name { get; }
+        public bool IsRewindable { get; } = true;
 
         public StreamProviderDirection Direction
         {
