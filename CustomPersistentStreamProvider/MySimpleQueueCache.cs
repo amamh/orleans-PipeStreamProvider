@@ -148,8 +148,8 @@ namespace PipeStreamProvider
         internal void InitializeCursor(MySimpleQueueCacheCursor cursor, StreamSequenceToken sequenceToken)
         {
             Log(_logger, "InitializeCursor: {0} to sequenceToken {1}", cursor, sequenceToken);
-            // if offset is not set or there is nothing in cache anyway, iterate from newest (first) message in cache, but not including the first message itself
-            if (sequenceToken == null || (_cachedMessages.Count == 0 && _coldCache.Count == 0))
+            // if offset is not set, iterate from newest (first) message in cache, but not including the first message itself
+            if (sequenceToken == null)
             {
                 var tokenToReset = ((EventSequenceToken)_lastSequenceTokenAddedToCache)?.NextSequenceNumber();
                 ResetCursor(cursor, tokenToReset);
@@ -160,26 +160,19 @@ namespace PipeStreamProvider
             if (sequenceToken.Older(OldestPossibleToken))
                 throw new QueueCacheMissException($"Requested token is too old: {sequenceToken}. You cannot request earlier than: {OldestPossibleToken}");
 
+            var lastToken = LastMessage?.SequenceToken;
+            var firstToken = OldestMessage?.SequenceToken;
 
             // sequenceId is too new to be in cache
-            var lastToken = LastMessage?.SequenceToken;
-            if (lastToken == null || sequenceToken.Newer(lastToken))
+            if ((_cachedMessages.Count == 0 && _coldCache.Count == 0) || sequenceToken.Newer(lastToken))
             {
+                // hasn't reached that point yet, retry
                 ResetCursor(cursor, sequenceToken);
                 return;
             }
 
-            // Check to see if offset is too old to be in cache
-            var firstToken = OldestMessage?.SequenceToken;
-            // sanity check:
-            Debug.Assert(firstToken == null || firstToken.Equals(OldestPossibleToken));
-            if (firstToken == null)
-            {
-                ResetCursor(cursor, sequenceToken);
-                return;
-            }
-            if (sequenceToken.Older(firstToken))
-                throw new QueueCacheMissException($"Requested token is too old: {sequenceToken}. Oldest available is: {firstToken}");
+            Debug.Assert(firstToken != null && lastToken != null);
+            Debug.Assert(firstToken.Equals(OldestPossibleToken));
 
             LinkedListNode<SimpleQueueCacheItem> node;
             if (Within(sequenceToken, _cachedMessages))
@@ -252,16 +245,14 @@ namespace PipeStreamProvider
                 return cursor.IsSet && TryGetNextMessage(cursor, out batch);
             }
 
-            // has this message been purged
-            if (_cachedMessages.Count == 0 || cursor.SequenceToken.Older(_cachedMessages.Last.Value.SequenceToken))
-                if (_coldCache.Count == 0 || cursor.SequenceToken.Older(_coldCache.Last.Value.SequenceToken))
-                    throw new QueueCacheMissException(cursor.SequenceToken, _cachedMessages.Last.Value.SequenceToken, _cachedMessages.First.Value.SequenceToken);
-
+            var oldestToken = OldestMessage?.SequenceToken;
+            Debug.Assert(oldestToken != null); // The cursor should have never been initialised if there were no messages
+            Debug.Assert(oldestToken.Equals(OldestPossibleToken));
+            Debug.Assert(cursor.SequenceToken.Newer(OldestPossibleToken) || cursor.SequenceToken.Equals(OldestPossibleToken));
 
             // Cursor now points to a valid message in the cache. Get it!
             // Capture the current element and advance to the next one.
             batch = cursor.Element.Value.Batch;
-
 
             // Advance to next:
             if (cursor.Element == _cachedMessages.First)
@@ -275,12 +266,10 @@ namespace PipeStreamProvider
                 var nextNode = cursor.Element.Previous;
 
                 // Done with cold cache?
-                if (nextNode == null && _coldCache.Count > 0 && 
-                    (cursor.SequenceToken.Newer(_coldCache.First.Value.SequenceToken) || cursor.SequenceToken.Equals(_coldCache.First.Value.SequenceToken))
-                    )
+                if (cursor.SequenceToken.Equals(_coldCache.First.Value.SequenceToken))
                 {
                     // Hot cache has nothing at the moment i.e. the cursor is now in sync
-                    if (_cachedMessages.Count == 0 || _cachedMessages.Last == null)
+                    if (_cachedMessages.Count == 0)
                     {
                         // Do the same as when the cursor is at the head of the hot cache
                         ResetCursor(cursor, ((EventSequenceToken)cursor.SequenceToken).NextSequenceNumber());
@@ -288,9 +277,10 @@ namespace PipeStreamProvider
                     }
                     // There is something in hot cache, start replaying that i.e. set the cursor to the start of the hot cache
                     else
-                        nextNode = _cachedMessages.Last;
+                        UpdateCursor(cursor, _cachedMessages.Last); ;
                 }
-                UpdateCursor(cursor, nextNode);
+                else // advance to next
+                    UpdateCursor(cursor, cursor.Element.Previous);
             }
             return true;
         }
