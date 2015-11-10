@@ -13,13 +13,12 @@ namespace StellaStreams
     public class PipeQueueAdapterReceiver : IQueueAdapterReceiver
     {
         public QueueId Id { get; }
-        private readonly ConcurrentDictionary<QueueId, Queue<byte[]>> _queues;
+        private readonly Queue<byte[]> _queue;
         private long _sequenceId;
-        public PipeQueueAdapterReceiver(QueueId queueId, ConcurrentDictionary<QueueId, Queue<byte[]>> queues)
+        public PipeQueueAdapterReceiver(Queue<byte[]> queue)
         {
             //_messages = queue;
-            Id = queueId;
-            _queues = queues;
+            _queue = queue;
         }
 
         public Task Initialize(TimeSpan timeout)
@@ -30,15 +29,10 @@ namespace StellaStreams
 
         public Task<IList<IBatchContainer>> GetQueueMessagesAsync(int maxCount)
         {
-            if (!_queues.ContainsKey(Id))
-                return Task.FromResult<IList<IBatchContainer>>(new List<IBatchContainer>());
-
-            var queue = _queues[Id];
-
             var listOfMessages = new List<byte[]>();
             for (var i = 0; i < maxCount; i++)
-                if (queue.Count > 0)
-                    listOfMessages.Add(queue.Dequeue());
+                if (_queue.Count > 0)
+                    listOfMessages.Add(_queue.Dequeue());
 
             var list = (from m in listOfMessages select SerializationManager.DeserializeFromByteArray<PipeQueueAdapterBatchContainer>(m));
             var pipeQueueAdapterBatchContainers = list as IList<PipeQueueAdapterBatchContainer> ?? list.ToList();

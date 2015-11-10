@@ -52,7 +52,14 @@ namespace StellaStreams
 
         public IQueueAdapterReceiver CreateReceiver(QueueId queueId)
         {
-            return new PipeQueueAdapterReceiver(queueId, _queues);
+            Queue<byte[]> queue;
+            if (!_queues.TryGetValue(queueId, out queue))
+            {
+                var tmpQueue = new Queue<byte[]>();
+                queue = _queues.GetOrAdd(queueId, tmpQueue);
+            }
+
+            return new PipeQueueAdapterReceiver(queue);
         }
 
         public string Name { get; }

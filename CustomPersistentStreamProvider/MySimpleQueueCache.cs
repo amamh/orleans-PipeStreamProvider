@@ -43,7 +43,6 @@ namespace StellaStreams
         private readonly int _maxCacheSize;
         private readonly Logger _logger;
         private readonly List<CacheBucket> _cacheCursorHistogram; // for backpressure detection
-        private int _maxColdCacheSize = 1024;
         private const int NumCacheHistogramBuckets = 100;
 
         public QueueId Id { get; }
@@ -372,8 +371,6 @@ namespace StellaStreams
         private void AddToCold(SimpleQueueCacheItem item)
         {
             _coldCache.AddFirst(new LinkedListNode<SimpleQueueCacheItem>(item));
-            if (_coldCache.Count > _maxColdCacheSize)
-                _coldCache.RemoveLast();
         }
 
         internal static void Log(Logger logger, string format, params object[] args)
