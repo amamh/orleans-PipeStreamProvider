@@ -8,7 +8,7 @@ using Orleans.Providers.Streams.Common;
 using Orleans.Serialization;
 using Orleans.Streams;
 
-namespace StellaStreams
+namespace PipeStreamProvider
 {
     public class PipeQueueAdapterReceiver : IQueueAdapterReceiver
     {

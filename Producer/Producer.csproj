@@ -58,10 +58,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\GrainCollections\GrainCollections.csproj">
-      <Project>{0e176d54-8b6f-4c75-8e7a-3bf6cc0846bd}</Project>
-      <Name>GrainCollections</Name>
-    </ProjectReference>
     <ProjectReference Include="..\GrainInterfaces\GrainInterfaces.csproj">
       <Project>{8799b6c8-14b6-4f8e-84d7-69158d7ecd70}</Project>
       <Name>GrainInterfaces</Name>
