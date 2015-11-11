@@ -51,7 +51,7 @@ namespace PipeStreamProvider
         internal SimpleQueueCacheItem? OldestMessage => _coldCache?.Last?.Value ?? _cachedMessages?.Last?.Value;
         internal SimpleQueueCacheItem? LastMessage => _cachedMessages?.First?.Value ?? _coldCache?.First?.Value;
 
-        public int Size => _cachedMessages.Count + _coldCache.Count;
+        public int Size => _cachedMessages.Count;
 
         public int MaxAddCount { get; }
 
@@ -214,9 +214,7 @@ namespace PipeStreamProvider
             }
             else // Shouldn't happen, there is a check earlier
             {
-                // set to oldest available:
                 Log(_logger, "Cold cache logic failure in InitializeCursor. Requested token {0}, oldest available in cold cache {1}", sequenceToken, _coldCache.Last.Value.SequenceToken);
-                // throw cache miss exception
                 throw new QueueCacheMissException(sequenceToken, _cachedMessages.Last.Value.SequenceToken, _cachedMessages.First.Value.SequenceToken);
             }
 
@@ -262,9 +260,6 @@ namespace PipeStreamProvider
             }
             else // move to next
             {
-                // Move to next, whether in cold or hot
-                var nextNode = cursor.Element.Previous;
-
                 // Done with cold cache?
                 if (cursor.SequenceToken.Equals(_coldCache.First.Value.SequenceToken))
                 {
@@ -280,7 +275,11 @@ namespace PipeStreamProvider
                         UpdateCursor(cursor, _cachedMessages.Last); ;
                 }
                 else // advance to next
+                {
+                    // it can only be null if this is the latest element in either of the caches. We have checked for that already
+                    Debug.Assert(cursor.Element.Previous != null);
                     UpdateCursor(cursor, cursor.Element.Previous);
+                }
             }
             return true;
         }
