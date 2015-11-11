@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using GrainInterfaces;
 using Orleans;
 using Orleans.Concurrency;
+using Orleans.Providers.Streams.Common;
 using Orleans.Streams;
 
 namespace GrainCollections
@@ -39,15 +40,13 @@ namespace GrainCollections
             return Task.FromResult(_stream);
         }
 
-        public async Task Subscribe(IAsyncObserver<int> observer)
+        public async Task Subscribe(IAsyncObserver<int> observer, bool recover = false)
         {
-            await _stream.SubscribeAsync(observer);
+            await _stream.SubscribeAsync(observer, recover ? new EventSequenceToken(0) : null);
         }
-
-        public async Task<Immutable<LinkedList<int>>> Subscribe(IAsyncObserver<int> observer, bool recover)
+        public Task<Tuple<string, string, Guid>> GetStreamDetails()
         {
-            await _stream.SubscribeAsync(observer);
-            return recover ? new Immutable<LinkedList<int>>(_historicalData) : new Immutable<LinkedList<int>>(null);
+            return Task.FromResult(Tuple.Create(ProviderToUse, StreamNamespace, _streamGuid));
         }
     }
 }

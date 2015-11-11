@@ -19,10 +19,7 @@ namespace PipeStreamProvider
         public Guid StreamGuid { get; }
         public string StreamNamespace { get; }
 
-        public StreamSequenceToken SequenceToken
-        {
-            get { return EventSequenceToken; }
-        }
+        public StreamSequenceToken SequenceToken => EventSequenceToken;
 
         public PipeQueueAdapterBatchContainer(Guid streamGuid, string streamNamespace, List<object> events, Dictionary<string, object> requestContext)
         {

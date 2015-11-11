@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Orleans;
 using Orleans.Concurrency;
@@ -11,6 +12,8 @@ namespace GrainInterfaces
         Task SetRandomData(int random);
         Task<IAsyncStream<int>> GetStream();
 
-        Task<Immutable<LinkedList<int>>> Subscribe(IAsyncObserver<int> observer, bool recover);
+        Task Subscribe(IAsyncObserver<int> observer, bool recover = false);
+
+        Task<Tuple<string, string, Guid>> GetStreamDetails();
     }
 }

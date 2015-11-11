@@ -14,7 +14,6 @@ namespace PipeStreamProvider
 {
     public class PipeQueueAdapter : IQueueAdapter
     {
-        //private Queue<string> _queue = new Queue<string>();
         private IStreamQueueMapper _streamQueueMapper;
         private readonly ConcurrentDictionary<QueueId, Queue<byte[]>> _queues = new ConcurrentDictionary<QueueId, Queue<byte[]>>();
 
@@ -65,12 +64,6 @@ namespace PipeStreamProvider
         public string Name { get; }
         public bool IsRewindable { get; } = true;
 
-        public StreamProviderDirection Direction
-        {
-            get
-            {
-                return StreamProviderDirection.ReadWrite;
-            }
-        }
+        public StreamProviderDirection Direction => StreamProviderDirection.ReadWrite;
     }
 }

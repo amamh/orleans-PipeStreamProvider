@@ -32,12 +32,21 @@ namespace Client
             Console.ReadLine();
         }
 
+        [Serializable]
         public class TestObserver : IAsyncObserver<int>
         {
             public async Task Subscribe()
             {
                 var ccGrain = GrainClient.GrainFactory.GetGrain<ISampleDataGrain>(0);
-                var stream = await ccGrain.GetStream();
+
+                var details = await ccGrain.GetStreamDetails();
+                var providerName = details.Item1;
+                var nameSpace = details.Item2;
+                var guid = details.Item3;
+
+                var provider = GrainClient.GetStreamProvider(providerName);
+                var stream = provider.GetStream<int>(guid, nameSpace);
+                //var stream = await ccGrain.GetStream();
                 await stream.SubscribeAsync(this, null);
             }
 
