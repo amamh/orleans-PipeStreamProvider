@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using GrainInterfaces;
 using Orleans;
 using Orleans.Streams;
+using Orleans.Providers.Streams.Common;
 
 namespace Client
 {
@@ -25,13 +26,13 @@ namespace Client
             Console.WriteLine("Waiting");
             Task.Delay(2000).Wait();
             Console.WriteLine("Starting");
-            var testObserver = GrainClient.GrainFactory.GetGrain<ITestObserver>(0);
-            //var testObserver = new TestObserver();
+            //var testObserver = GrainClient.GrainFactory.GetGrain<ITestObserver>(0);
+            var testObserver = new TestObserver();
             testObserver.Subscribe().Wait();
             Console.ReadLine();
         }
 
-        public class TestObserver : ITestObserver, IGrainObserver
+        public class TestObserver : IAsyncObserver<int>
         {
             public async Task Subscribe()
             {
