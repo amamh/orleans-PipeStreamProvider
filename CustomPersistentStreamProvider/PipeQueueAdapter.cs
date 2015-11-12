@@ -28,7 +28,7 @@ namespace PipeStreamProvider
             Name = name;
             _context = NetMQContext.Create();
             _socket = _context.CreatePushSocket();
-            _socket.Bind("tcp://localhost:5557"); // FIXME: you can't bind to the same port
+            _socket.Connect("tcp://127.0.0.1:1234");
         }
 
         public Task QueueMessageBatchAsync<T>(Guid streamGuid, string streamNamespace, IEnumerable<T> events, StreamSequenceToken token,

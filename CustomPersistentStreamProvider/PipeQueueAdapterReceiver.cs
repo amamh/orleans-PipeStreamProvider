@@ -18,15 +18,15 @@ namespace PipeStreamProvider
         private readonly Queue<byte[]> _queue;
         private long _sequenceId;
 
-        private NetMQContext _context;
-        private PullSocket _socket;
+        private readonly NetMQContext _context;
+        private readonly PullSocket _socket;
 
         public PipeQueueAdapterReceiver(QueueId queueid)
         {
             //_messages = queue;
             _context = NetMQContext.Create();
             _socket = _context.CreatePullSocket();
-            _socket.Connect("tcp://localhost:5557");
+            _socket.Connect("tcp://127.0.0.1:5678");
 
             Id = queueid;
         }
@@ -39,17 +39,18 @@ namespace PipeStreamProvider
 
         public Task<IList<IBatchContainer>> GetQueueMessagesAsync(int maxCount)
         {
-
-
             var listOfMessages = new List<byte[]>();
             for (var i = 0; i < maxCount; i++)
             {
-                var topic = _socket.ReceiveFrameString();
+                string topic;
+                if (!_socket.TryReceiveFrameString(TimeSpan.FromMilliseconds(10), out topic)) continue;
+
                 if (topic == Id.ToString())
                 {
-                    var msg = _socket.ReceiveFrameBytes();
-                    if (msg != null && msg.Length != 0)
-                        listOfMessages.Add(msg);
+                    byte[] msg;
+                    if (_socket.TryReceiveFrameBytes(out msg))
+                        if (msg != null && msg.Length != 0)
+                            listOfMessages.Add(msg);
                 }
                 else if (string.IsNullOrWhiteSpace(topic))
                     break;

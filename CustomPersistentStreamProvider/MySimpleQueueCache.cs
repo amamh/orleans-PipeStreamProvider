@@ -261,7 +261,7 @@ namespace PipeStreamProvider
             else // move to next
             {
                 // Done with cold cache?
-                if (cursor.SequenceToken.Equals(_coldCache.First.Value.SequenceToken))
+                if (cursor.SequenceToken.Equals(_coldCache.First?.Value.SequenceToken))
                 {
                     // Hot cache has nothing at the moment i.e. the cursor is now in sync
                     if (_cachedMessages.Count == 0)
