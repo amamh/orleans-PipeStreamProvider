@@ -7,6 +7,8 @@ using Orleans;
 using Orleans.Providers.Streams.Common;
 using Orleans.Serialization;
 using Orleans.Streams;
+using NetMQ.Sockets;
+using NetMQ;
 
 namespace PipeStreamProvider
 {
@@ -15,10 +17,18 @@ namespace PipeStreamProvider
         public QueueId Id { get; }
         private readonly Queue<byte[]> _queue;
         private long _sequenceId;
-        public PipeQueueAdapterReceiver(Queue<byte[]> queue)
+
+        private NetMQContext _context;
+        private PullSocket _socket;
+
+        public PipeQueueAdapterReceiver(QueueId queueid)
         {
             //_messages = queue;
-            _queue = queue;
+            _context = NetMQContext.Create();
+            _socket = _context.CreatePullSocket();
+            _socket.Connect("tcp://localhost:5557");
+
+            Id = queueid;
         }
 
         public Task Initialize(TimeSpan timeout)
@@ -29,10 +39,21 @@ namespace PipeStreamProvider
 
         public Task<IList<IBatchContainer>> GetQueueMessagesAsync(int maxCount)
         {
+
+
             var listOfMessages = new List<byte[]>();
             for (var i = 0; i < maxCount; i++)
-                if (_queue.Count > 0)
-                    listOfMessages.Add(_queue.Dequeue());
+            {
+                var topic = _socket.ReceiveFrameString();
+                if (topic == Id.ToString())
+                {
+                    var msg = _socket.ReceiveFrameBytes();
+                    if (msg != null && msg.Length != 0)
+                        listOfMessages.Add(msg);
+                }
+                else if (string.IsNullOrWhiteSpace(topic))
+                    break;
+            }
 
             var list = (from m in listOfMessages select SerializationManager.DeserializeFromByteArray<PipeQueueAdapterBatchContainer>(m));
             var pipeQueueAdapterBatchContainers = list as IList<PipeQueueAdapterBatchContainer> ?? list.ToList();

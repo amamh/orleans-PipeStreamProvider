@@ -9,18 +9,26 @@ using Orleans;
 using Orleans.Runtime;
 using Orleans.Serialization;
 using Orleans.Streams;
+using NetMQ;
+using NetMQ.Sockets;
 
 namespace PipeStreamProvider
 {
     public class PipeQueueAdapter : IQueueAdapter
     {
         private IStreamQueueMapper _streamQueueMapper;
-        private readonly ConcurrentDictionary<QueueId, Queue<byte[]>> _queues = new ConcurrentDictionary<QueueId, Queue<byte[]>>();
+        //private readonly ConcurrentDictionary<QueueId, Queue<byte[]>> _queues = new ConcurrentDictionary<QueueId, Queue<byte[]>>();
+
+        private NetMQContext _context;
+        private PushSocket _socket;
 
         public PipeQueueAdapter(IStreamQueueMapper streamQueueMapper, string name)
         {
             _streamQueueMapper = streamQueueMapper;
             Name = name;
+            _context = NetMQContext.Create();
+            _socket = _context.CreatePushSocket();
+            _socket.Bind("tcp://localhost:5557"); // FIXME: you can't bind to the same port
         }
 
         public Task QueueMessageBatchAsync<T>(Guid streamGuid, string streamNamespace, IEnumerable<T> events, StreamSequenceToken token,
@@ -32,33 +40,37 @@ namespace PipeStreamProvider
             }
 
             var queueId = _streamQueueMapper.GetQueueForStream(streamGuid, streamNamespace);
-            Queue<byte[]> queue;
-            if (!_queues.TryGetValue(queueId, out queue))
-            {
-                var tmpQueue = new Queue<byte[]>();
-                queue = _queues.GetOrAdd(queueId, tmpQueue);
-            }
+            //Queue<byte[]> queue;
+            //if (!_queues.TryGetValue(queueId, out queue))
+            //{
+            //    var tmpQueue = new Queue<byte[]>();
+            //    queue = _queues.GetOrAdd(queueId, tmpQueue);
+            //}
+
 
             var eventsAsObjects = events.Cast<object>().ToList();
 
             var container = new PipeQueueAdapterBatchContainer(streamGuid, streamNamespace, eventsAsObjects, requestContext);
 
             var bytes = SerializationManager.SerializeToByteArray(container);
-            queue.Enqueue(bytes);
+
+            _socket.SendMoreFrame(queueId.ToString()).SendFrame(bytes);
+
+            //queue.Enqueue(bytes);
 
             return TaskDone.Done;
         }
 
         public IQueueAdapterReceiver CreateReceiver(QueueId queueId)
         {
-            Queue<byte[]> queue;
-            if (!_queues.TryGetValue(queueId, out queue))
-            {
-                var tmpQueue = new Queue<byte[]>();
-                queue = _queues.GetOrAdd(queueId, tmpQueue);
-            }
+            //Queue<byte[]> queue;
+            //if (!_queues.TryGetValue(queueId, out queue))
+            //{
+            //    var tmpQueue = new Queue<byte[]>();
+            //    queue = _queues.GetOrAdd(queueId, tmpQueue);
+            //}
 
-            return new PipeQueueAdapterReceiver(queue);
+            return new PipeQueueAdapterReceiver(queueId);
         }
 
         public string Name { get; }
