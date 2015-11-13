@@ -69,7 +69,24 @@ namespace PipeStreamProvider
 
         public Task<IStreamFailureHandler> GetDeliveryFailureHandler(QueueId queueId)
         {
-            return Task.FromResult<IStreamFailureHandler>(new NoOpStreamDeliveryFailureHandler(false));
+            return Task.FromResult<IStreamFailureHandler>(new MyStreamFailureHandler());
+        }
+    }
+
+    public class MyStreamFailureHandler : IStreamFailureHandler
+    {
+        public bool ShouldFaultSubsriptionOnError { get; } = true;
+
+        public Task OnDeliveryFailure(GuidId subscriptionId, string streamProviderName, IStreamIdentity streamIdentity, StreamSequenceToken sequenceToken)
+        {
+            Console.WriteLine("Fail deliver");
+            return TaskDone.Done;
+        }
+
+        public Task OnSubscriptionFailure(GuidId subscriptionId, string streamProviderName, IStreamIdentity streamIdentity, StreamSequenceToken sequenceToken)
+        {
+            Console.WriteLine("Fail subscribe");
+            return TaskDone.Done;
         }
     }
 }
