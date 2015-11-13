@@ -7,26 +7,23 @@ using Orleans;
 using Orleans.Providers.Streams.Common;
 using Orleans.Serialization;
 using Orleans.Streams;
-using NetMQ.Sockets;
-using NetMQ;
+using StackExchange.Redis;
 
 namespace PipeStreamProvider
 {
     public class PipeQueueAdapterReceiver : IQueueAdapterReceiver
     {
+        private readonly IDatabase _database;
+        private readonly string _redisListName;
         public QueueId Id { get; }
         private readonly Queue<byte[]> _queue;
         private long _sequenceId;
 
-        private readonly NetMQContext _context;
-        private readonly PullSocket _socket;
 
-        public PipeQueueAdapterReceiver(QueueId queueid)
+        public PipeQueueAdapterReceiver(QueueId queueid, IDatabase database, string redisListName)
         {
-            //_messages = queue;
-            _context = NetMQContext.Create();
-            _socket = _context.CreatePullSocket();
-            _socket.Connect("tcp://127.0.0.1:5678");
+            _database = database;
+            _redisListName = redisListName;
 
             Id = queueid;
         }
@@ -39,21 +36,27 @@ namespace PipeStreamProvider
 
         public Task<IList<IBatchContainer>> GetQueueMessagesAsync(int maxCount)
         {
-            var listOfMessages = new List<byte[]>();
-            for (var i = 0; i < maxCount; i++)
-            {
-                string topic;
-                if (!_socket.TryReceiveFrameString(TimeSpan.FromMilliseconds(10), out topic)) continue;
+            if (!_database.KeyExists(_redisListName))
+                return Task.FromResult<IList<IBatchContainer>>(new List<IBatchContainer>());
 
-                if (topic == Id.ToString())
+            var listOfMessages = new List<byte[]>();
+
+            var listLength = _database.ListLength(_redisListName);
+            var max = Math.Max(maxCount, listLength);
+            
+            for (var i = 0; i < max; i++)
+            {
+                try
                 {
-                    byte[] msg;
-                    if (_socket.TryReceiveFrameBytes(out msg))
-                        if (msg != null && msg.Length != 0)
-                            listOfMessages.Add(msg);
+                    var nextMsg = _database.ListRightPop(_redisListName);
+                    if (!nextMsg.IsNull)
+                        listOfMessages.Add(nextMsg);
                 }
-                else if (string.IsNullOrWhiteSpace(topic))
+                catch (Exception exception)
+                {
+                    Console.WriteLine($"Receiver exception: {exception.ToString()}");
                     break;
+                }
             }
 
             var list = (from m in listOfMessages select SerializationManager.DeserializeFromByteArray<PipeQueueAdapterBatchContainer>(m));

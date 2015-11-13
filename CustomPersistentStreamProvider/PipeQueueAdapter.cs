@@ -9,44 +9,51 @@ using Orleans;
 using Orleans.Runtime;
 using Orleans.Serialization;
 using Orleans.Streams;
-using NetMQ;
-using NetMQ.Sockets;
+using StackExchange.Redis;
 
 namespace PipeStreamProvider
 {
     public class PipeQueueAdapter : IQueueAdapter
     {
-        private IStreamQueueMapper _streamQueueMapper;
+        private readonly IStreamQueueMapper _streamQueueMapper;
+        private ConnectionMultiplexer _connection;
+        private readonly int _databaseNum;
+        private readonly string _server;
+        private IDatabase _database;
+        private readonly string _redisListBaseName;
         //private readonly ConcurrentDictionary<QueueId, Queue<byte[]>> _queues = new ConcurrentDictionary<QueueId, Queue<byte[]>>();
 
-        private NetMQContext _context;
-        private PushSocket _socket;
 
-        public PipeQueueAdapter(IStreamQueueMapper streamQueueMapper, string name)
+        public PipeQueueAdapter(IStreamQueueMapper streamQueueMapper, string name, string server, int database, string redisListBaseName)
         {
             _streamQueueMapper = streamQueueMapper;
+            _databaseNum = database;
+            _server = server;
+            _redisListBaseName = redisListBaseName;
+
+
+            ConnectionMultiplexer.ConnectAsync(_server).ContinueWith(task =>
+            {
+                _connection = task.Result;
+                _database = _connection.GetDatabase(_databaseNum);
+            });
+
             Name = name;
-            _context = NetMQContext.Create();
-            _socket = _context.CreatePushSocket();
-            _socket.Connect("tcp://127.0.0.1:1234");
         }
 
         public Task QueueMessageBatchAsync<T>(Guid streamGuid, string streamNamespace, IEnumerable<T> events, StreamSequenceToken token,
             Dictionary<string, object> requestContext)
         {
+            if (_database == null)
+                return TaskDone.Done;
+
             if (events == null)
             {
                 throw new ArgumentNullException(nameof(events), "Trying to QueueMessageBatchAsync null data.");
             }
 
             var queueId = _streamQueueMapper.GetQueueForStream(streamGuid, streamNamespace);
-            //Queue<byte[]> queue;
-            //if (!_queues.TryGetValue(queueId, out queue))
-            //{
-            //    var tmpQueue = new Queue<byte[]>();
-            //    queue = _queues.GetOrAdd(queueId, tmpQueue);
-            //}
-
+            var redisListName = GetRedisListName(queueId);
 
             var eventsAsObjects = events.Cast<object>().ToList();
 
@@ -54,23 +61,19 @@ namespace PipeStreamProvider
 
             var bytes = SerializationManager.SerializeToByteArray(container);
 
-            _socket.SendMoreFrame(queueId.ToString()).SendFrame(bytes);
-
-            //queue.Enqueue(bytes);
+            _database.ListLeftPush(redisListName, bytes);
 
             return TaskDone.Done;
         }
 
+        private string GetRedisListName(QueueId queueId)
+        {
+            return _redisListBaseName + queueId;
+        }
+
         public IQueueAdapterReceiver CreateReceiver(QueueId queueId)
         {
-            //Queue<byte[]> queue;
-            //if (!_queues.TryGetValue(queueId, out queue))
-            //{
-            //    var tmpQueue = new Queue<byte[]>();
-            //    queue = _queues.GetOrAdd(queueId, tmpQueue);
-            //}
-
-            return new PipeQueueAdapterReceiver(queueId);
+            return new PipeQueueAdapterReceiver(queueId, _database, GetRedisListName(queueId));
         }
 
         public string Name { get; }

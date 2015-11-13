@@ -84,7 +84,7 @@ namespace PipeStreamProvider
         {
             return batchContainer != null &&
                     batchContainer.StreamGuid.Equals(_streamGuid) &&
-                    String.Equals(batchContainer.StreamNamespace, _streamNamespace);
+                    string.Equals(batchContainer.StreamNamespace, _streamNamespace);
         }
 
         #region IDisposable Members
@@ -106,8 +106,8 @@ namespace PipeStreamProvider
 
         public override string ToString()
         {
-            return string.Format("<SimpleQueueCacheCursor: Element={0}, SequenceToken={1}>",
-                Element != null ? Element.Value.Batch.ToString() : "null", SequenceToken != null ? SequenceToken.ToString() : "null");
+            return
+                $"<SimpleQueueCacheCursor: Element={(Element != null ? Element.Value.Batch.ToString() : "null")}, SequenceToken={(SequenceToken != null ? SequenceToken.ToString() : "null")}>";
         }
     }
 }

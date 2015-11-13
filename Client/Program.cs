@@ -23,12 +23,14 @@ namespace Client
                     Task.Delay(500).Wait();
                 }
             }
+
             Console.WriteLine("Waiting");
             Task.Delay(2000).Wait();
             Console.WriteLine("Starting");
             //var testObserver = GrainClient.GrainFactory.GetGrain<ITestObserver>(0);
             var testObserver = new TestObserver();
             testObserver.Subscribe().Wait();
+
             Console.ReadLine();
         }
 
