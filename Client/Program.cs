@@ -31,25 +31,23 @@ namespace Client
             var testObserver = new TestObserver();
             testObserver.Subscribe().Wait();
 
+            testObserver = new TestObserver();
+            testObserver.Subscribe().Wait();
+
+            testObserver = new TestObserver();
+            testObserver.Subscribe().Wait();
+
             Console.ReadLine();
         }
 
-        [Serializable]
+
         public class TestObserver : IAsyncObserver<int>
         {
             public async Task Subscribe()
             {
                 var ccGrain = GrainClient.GrainFactory.GetGrain<ISampleDataGrain>(0);
-
-                var details = await ccGrain.GetStreamDetails();
-                var providerName = details.Item1;
-                var nameSpace = details.Item2;
-                var guid = details.Item3;
-
-                var provider = GrainClient.GetStreamProvider(providerName);
-                var stream = provider.GetStream<int>(guid, nameSpace);
-                //var stream = await ccGrain.GetStream();
-                await stream.SubscribeAsync(this, null);
+                var stream = await ccGrain.GetStream();
+                await stream.SubscribeAsync(this, new EventSequenceToken(0));
             }
 
             public Task OnNextAsync(int item, StreamSequenceToken token = null)

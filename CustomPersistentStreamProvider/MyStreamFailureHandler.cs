@@ -19,13 +19,13 @@ namespace PipeStreamProvider
 
         public Task OnDeliveryFailure(GuidId subscriptionId, string streamProviderName, IStreamIdentity streamIdentity, StreamSequenceToken sequenceToken)
         {
-            _logger.AutoError($"MyStreamFailureHandler.OnDeliveryFailure: provider name: {streamProviderName}, sub id: {subscriptionId}, stream id: {streamIdentity}, token: {sequenceToken}");
+            _logger.AutoError($"provider name: {streamProviderName}, sub id: {subscriptionId}, stream id: {streamIdentity}, token: {sequenceToken}");
             return TaskDone.Done;
         }
 
         public Task OnSubscriptionFailure(GuidId subscriptionId, string streamProviderName, IStreamIdentity streamIdentity, StreamSequenceToken sequenceToken)
         {
-            _logger.AutoError($"MyStreamFailureHandler.OnSubscriptionFailure: provider name: {streamProviderName}, sub id: {subscriptionId}, stream id: {streamIdentity}, token: {sequenceToken}");
+            _logger.AutoError($"provider name: {streamProviderName}, sub id: {subscriptionId}, stream id: {streamIdentity}, token: {sequenceToken}");
             return TaskDone.Done;
         }
     }

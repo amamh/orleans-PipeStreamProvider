@@ -49,12 +49,10 @@ namespace PipeStreamProvider
             foreach (var item in _events)
             {
                 if (shouldReceiveFunc(stream, filterData, item))
-                    return true; // There is something in this batch that the consumer is intereted in, so we should send it.
+                    return true; // There is something in this batch that the consumer is interested in, so we should send it.
             }
             return false; // Consumer is not interested in any of these events, so don't send.
         }
-
-
 
         public override string ToString()
         {

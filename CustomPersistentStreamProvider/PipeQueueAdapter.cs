@@ -35,7 +35,7 @@ namespace PipeStreamProvider
             {
                 _connection = task.Result;
                 _database = _connection.GetDatabase(_databaseNum);
-                _logger.AutoInfo($"PipeQueueAdapter.PipeQueueAdapter: connection to Redis successful.");
+                _logger.AutoInfo($"connection to Redis successful.");
             });
 
             Name = name;
@@ -46,7 +46,7 @@ namespace PipeStreamProvider
         {
             if (_database == null)
             {
-                _logger.AutoWarn($"PipeQueueAdapter.QueueMessageBatchAsync: Trying to write before connection is made to Redis. This batch of data was ignored.");
+                _logger.AutoWarn($"Trying to write before connection is made to Redis. This batch of data was ignored.");
                 return TaskDone.Done;
             }
 
@@ -70,7 +70,7 @@ namespace PipeStreamProvider
             }
             catch (Exception exception)
             {
-                _logger.AutoError($"PipeQueueAdapter.QueueMessageBatchAsync: failed to write to Redis list {redisListName}. Exception: {exception}");
+                _logger.AutoError($"failed to write to Redis list {redisListName}. Exception: {exception}");
             }
 
             return TaskDone.Done;

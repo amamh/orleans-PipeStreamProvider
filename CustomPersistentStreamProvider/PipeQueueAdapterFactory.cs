@@ -10,17 +10,17 @@ namespace PipeStreamProvider
 {
     public class PipeQueueAdapterFactory : IQueueAdapterFactory
     {
-        private const string CACHE_SIZE_PARAM = "CacheSize";
-        private const int DEFAULT_CACHE_SIZE = 4096;
+        private const string CacheSizeParam = "CacheSize";
+        private const int DefaultCacheSize = 4096;
 
-        private const string NUM_QUEUES_PARAM = "NumQueues";
-        private const int DEFAULT_NUM_QUEUES = 8; // keep as power of 2.
+        private const string NumQueuesParam = "NumQueues";
+        private const int DefaultNumQueues = 8; // keep as power of 2.
 
-        private const string SERVER_PARAM = "Server";
-        private const string DEFAULT_SERVER = "localhost:6379";
+        private const string ServerParam = "Server";
+        private const string DefaultServer = "localhost:6379";
 
-        private const string REDIS_DB_PARAM = "RedisDb";
-        private const int DEFAULT_REDIS_DB = -1;
+        private const string RedisDbParam = "RedisDb";
+        private const int DefaultRedisDb = -1;
 
         private string _providerName;
         private Logger _logger;
@@ -39,41 +39,41 @@ namespace PipeStreamProvider
 
             // Cache size
             string cacheSizeString;
-            _cacheSize = DEFAULT_CACHE_SIZE;
-            if (config.Properties.TryGetValue(CACHE_SIZE_PARAM, out cacheSizeString))
+            _cacheSize = DefaultCacheSize;
+            if (config.Properties.TryGetValue(CacheSizeParam, out cacheSizeString))
             {
                 if (!int.TryParse(cacheSizeString, out _cacheSize))
-                    throw new ArgumentException($"{CACHE_SIZE_PARAM} invalid.  Must be int");
+                    throw new ArgumentException($"{CacheSizeParam} invalid.  Must be int");
             }
 
             // # queues
             string numQueuesString;
-            _numQueues = DEFAULT_NUM_QUEUES;
-            if (config.Properties.TryGetValue(NUM_QUEUES_PARAM, out numQueuesString))
+            _numQueues = DefaultNumQueues;
+            if (config.Properties.TryGetValue(NumQueuesParam, out numQueuesString))
             {
                 if (!int.TryParse(numQueuesString, out _numQueues))
-                    throw new ArgumentException($"{NUM_QUEUES_PARAM} invalid.  Must be int");
+                    throw new ArgumentException($"{NumQueuesParam} invalid.  Must be int");
             }
 
             // server
             string server;
-            _server = DEFAULT_SERVER;
-            if (config.Properties.TryGetValue(SERVER_PARAM, out server))
+            _server = DefaultServer;
+            if (config.Properties.TryGetValue(ServerParam, out server))
             {
                 if (server == "")
-                    throw new ArgumentException($"{DEFAULT_SERVER} invalid. Must not be empty");
+                    throw new ArgumentException($"{DefaultServer} invalid. Must not be empty");
                 _server = server;
             }
 
             // db
             string dbNum;
-            _databaseNum = DEFAULT_REDIS_DB;
-            if (config.Properties.TryGetValue(REDIS_DB_PARAM, out dbNum))
+            _databaseNum = DefaultRedisDb;
+            if (config.Properties.TryGetValue(RedisDbParam, out dbNum))
             {
                 if (!int.TryParse(dbNum, out _databaseNum))
-                    throw new ArgumentException($"{REDIS_DB_PARAM} invalid.  Must be int");
+                    throw new ArgumentException($"{RedisDbParam} invalid.  Must be int");
                 if (_databaseNum > 15 || _databaseNum < 0)
-                    throw new ArgumentException($"{REDIS_DB_PARAM} invalid.  Must be from 0 to 15");
+                    throw new ArgumentException($"{RedisDbParam} invalid.  Must be from 0 to 15");
             }
 
 
