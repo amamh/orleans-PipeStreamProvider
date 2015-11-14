@@ -56,9 +56,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LoggerExtensions.cs" />
     <Compile Include="MySimpleQueueCache.cs" />
     <Compile Include="MySimpleQueueCacheCursor.cs" />
     <Compile Include="MySimpleQueueAdapterCache.cs" />
+    <Compile Include="MyStreamFailureHandler.cs" />
     <Compile Include="PipeQueueAdapter.cs" />
     <Compile Include="PipeQueueAdapterBatchContainer.cs" />
     <Compile Include="PipeQueueAdapterFactory.cs" />

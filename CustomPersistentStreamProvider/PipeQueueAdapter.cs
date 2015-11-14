@@ -15,27 +15,27 @@ namespace PipeStreamProvider
 {
     public class PipeQueueAdapter : IQueueAdapter
     {
+        private readonly Logger _logger;
         private readonly IStreamQueueMapper _streamQueueMapper;
         private ConnectionMultiplexer _connection;
         private readonly int _databaseNum;
         private readonly string _server;
         private IDatabase _database;
         private readonly string _redisListBaseName;
-        //private readonly ConcurrentDictionary<QueueId, Queue<byte[]>> _queues = new ConcurrentDictionary<QueueId, Queue<byte[]>>();
 
-
-        public PipeQueueAdapter(IStreamQueueMapper streamQueueMapper, string name, string server, int database, string redisListBaseName)
+        public PipeQueueAdapter(Logger logger, IStreamQueueMapper streamQueueMapper, string name, string server, int database, string redisListBaseName)
         {
+            _logger = logger;
             _streamQueueMapper = streamQueueMapper;
             _databaseNum = database;
             _server = server;
             _redisListBaseName = redisListBaseName;
 
-
             ConnectionMultiplexer.ConnectAsync(_server).ContinueWith(task =>
             {
                 _connection = task.Result;
                 _database = _connection.GetDatabase(_databaseNum);
+                _logger.AutoInfo($"PipeQueueAdapter.PipeQueueAdapter: connection to Redis successful.");
             });
 
             Name = name;
@@ -45,7 +45,10 @@ namespace PipeStreamProvider
             Dictionary<string, object> requestContext)
         {
             if (_database == null)
+            {
+                _logger.AutoWarn($"PipeQueueAdapter.QueueMessageBatchAsync: Trying to write before connection is made to Redis. This batch of data was ignored.");
                 return TaskDone.Done;
+            }
 
             if (events == null)
             {
@@ -61,7 +64,14 @@ namespace PipeStreamProvider
 
             var bytes = SerializationManager.SerializeToByteArray(container);
 
-            _database.ListLeftPush(redisListName, bytes);
+            try
+            {
+                _database.ListLeftPush(redisListName, bytes);
+            }
+            catch (Exception exception)
+            {
+                _logger.AutoError($"PipeQueueAdapter.QueueMessageBatchAsync: failed to write to Redis list {redisListName}. Exception: {exception}");
+            }
 
             return TaskDone.Done;
         }
@@ -73,7 +83,7 @@ namespace PipeStreamProvider
 
         public IQueueAdapterReceiver CreateReceiver(QueueId queueId)
         {
-            return new PipeQueueAdapterReceiver(queueId, _database, GetRedisListName(queueId));
+            return new PipeQueueAdapterReceiver(_logger, queueId, _database, GetRedisListName(queueId));
         }
 
         public string Name { get; }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Orleans;
 using Orleans.Providers.Streams.Common;
+using Orleans.Runtime;
 using Orleans.Serialization;
 using Orleans.Streams;
 using StackExchange.Redis;
@@ -13,15 +14,16 @@ namespace PipeStreamProvider
 {
     public class PipeQueueAdapterReceiver : IQueueAdapterReceiver
     {
+        private readonly Logger _logger;
         private readonly IDatabase _database;
         private readonly string _redisListName;
         public QueueId Id { get; }
-        private readonly Queue<byte[]> _queue;
         private long _sequenceId;
 
 
-        public PipeQueueAdapterReceiver(QueueId queueid, IDatabase database, string redisListName)
+        public PipeQueueAdapterReceiver(Logger logger, QueueId queueid, IDatabase database, string redisListName)
         {
+            _logger = logger;
             _database = database;
             _redisListName = redisListName;
 
@@ -30,7 +32,6 @@ namespace PipeStreamProvider
 
         public Task Initialize(TimeSpan timeout)
         {
-            //throw new NotImplementedException();
             return TaskDone.Done;
         }
 
@@ -54,7 +55,7 @@ namespace PipeStreamProvider
                 }
                 catch (Exception exception)
                 {
-                    Console.WriteLine($"Receiver exception: {exception.ToString()}");
+                    _logger.AutoError($"Couldn't read from Redis list {_redisListName}, exception: {exception}");
                     break;
                 }
             }
@@ -64,12 +65,13 @@ namespace PipeStreamProvider
             foreach (var batchContainer in pipeQueueAdapterBatchContainers)
                 batchContainer.EventSequenceToken = new EventSequenceToken(_sequenceId++);
 
+            _logger.AutoVerbose($"Read {pipeQueueAdapterBatchContainers.Count} batch containers");
             return Task.FromResult<IList<IBatchContainer>>(pipeQueueAdapterBatchContainers.ToList<IBatchContainer>());
         }
 
         public Task MessagesDeliveredAsync(IList<IBatchContainer> messages)
         {
-            //Console.WriteLine($"Delivered {messages.Count}, last one has token {messages.Last().SequenceToken}");
+            _logger.AutoVerbose($"Delivered {messages.Count}, last one has token {messages.Last().SequenceToken}");
             return TaskDone.Done;
         }
 

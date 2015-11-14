@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Orleans;
 using Orleans.Providers;
 using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
@@ -84,7 +83,7 @@ namespace PipeStreamProvider
 
         public Task<IQueueAdapter> CreateAdapter()
         {
-            var adapter = new PipeQueueAdapter(GetStreamQueueMapper(), _providerName, _server, _databaseNum, "orleans");
+            var adapter = new PipeQueueAdapter(_logger, GetStreamQueueMapper(), _providerName, _server, _databaseNum, "orleans");
             return Task.FromResult<IQueueAdapter>(adapter);
         }
 
@@ -100,24 +99,7 @@ namespace PipeStreamProvider
 
         public Task<IStreamFailureHandler> GetDeliveryFailureHandler(QueueId queueId)
         {
-            return Task.FromResult<IStreamFailureHandler>(new MyStreamFailureHandler());
-        }
-    }
-
-    public class MyStreamFailureHandler : IStreamFailureHandler
-    {
-        public bool ShouldFaultSubsriptionOnError { get; } = true;
-
-        public Task OnDeliveryFailure(GuidId subscriptionId, string streamProviderName, IStreamIdentity streamIdentity, StreamSequenceToken sequenceToken)
-        {
-            Console.WriteLine("Fail deliver");
-            return TaskDone.Done;
-        }
-
-        public Task OnSubscriptionFailure(GuidId subscriptionId, string streamProviderName, IStreamIdentity streamIdentity, StreamSequenceToken sequenceToken)
-        {
-            Console.WriteLine("Fail subscribe");
-            return TaskDone.Done;
+            return Task.FromResult<IStreamFailureHandler>(new MyStreamFailureHandler(_logger));
         }
     }
 }
