@@ -3,10 +3,14 @@
 - An example of a PersistentStreamProvider with a custom adapter.
 - A way to implement replayable streams using a custom IQueueCache i.e. the client can ask to replay past events.
 
+# Note
+
+This is using an in-memory queue as a placeholder instead of a physical queue, for pratical use, you should replace that with your own queue choice.
+For an example of how to do that, check 'redis' branch.
+
 # Implementation
 
 This is based on the Azure Queue Stream Provider which is included in Orleans. The main change was replacing Azure Queue with a .NET Queue.
-
 
 The stream is made replayable by having a new IQueueCache implementation instead of SimpleQueueCache which is used in Azure Queue Stream. The idea was to keep the original SimpleQueueCache as intact as possible to make the implementation simpler:
 
@@ -25,4 +29,4 @@ The sample provided will start a producer, wait a few seconds then start a consu
 
 # Future
 
-- Provide optional Redis persistence instead of using an in-memory queue for `_coldCache`.
+- Use persistent memory for `_coldCache`
