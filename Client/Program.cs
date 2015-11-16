@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using GrainInterfaces;
 using Orleans;
-using Orleans.Streams;
-using Orleans.Providers.Streams.Common;
 
 namespace Client
 {
@@ -29,42 +26,12 @@ namespace Client
             Console.WriteLine("Starting");
             //var testObserver = GrainClient.GrainFactory.GetGrain<ITestObserver>(0);
             var testObserver = new TestObserver();
-            testObserver.Subscribe().Wait();
+            testObserver.Subscribe1().Wait();
 
             testObserver = new TestObserver();
-            testObserver.Subscribe().Wait();
-
-            testObserver = new TestObserver();
-            testObserver.Subscribe().Wait();
+            testObserver.Subscribe2().Wait();
 
             Console.ReadLine();
-        }
-
-
-        public class TestObserver : IAsyncObserver<int>
-        {
-            public async Task Subscribe()
-            {
-                var ccGrain = GrainClient.GrainFactory.GetGrain<ISampleDataGrain>(0);
-                var stream = await ccGrain.GetStream();
-                await stream.SubscribeAsync(this, new EventSequenceToken(0));
-            }
-
-            public Task OnNextAsync(int item, StreamSequenceToken token = null)
-            {
-                Console.WriteLine(item);
-                return TaskDone.Done;
-            }
-
-            public Task OnCompletedAsync()
-            {
-                throw new NotImplementedException();
-            }
-
-            public Task OnErrorAsync(Exception ex)
-            {
-                throw new NotImplementedException();
-            }
         }
     }
 }

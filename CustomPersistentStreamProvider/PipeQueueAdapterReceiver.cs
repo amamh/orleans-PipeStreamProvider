@@ -8,26 +8,22 @@ using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
 using Orleans.Serialization;
 using Orleans.Streams;
-using StackExchange.Redis;
 
 namespace PipeStreamProvider
 {
     public class PipeQueueAdapterReceiver : IQueueAdapterReceiver
     {
         private readonly Logger _logger;
-        private readonly IDatabase _database;
-        private readonly string _redisListName;
+        private readonly Queue<byte[]> _queue;
         public QueueId Id { get; }
         private long _sequenceId;
 
 
-        public PipeQueueAdapterReceiver(Logger logger, QueueId queueid, IDatabase database, string redisListName)
+        public PipeQueueAdapterReceiver(Logger logger, QueueId queueid, Queue<byte[]> queue)
         {
             _logger = logger;
-            _database = database;
-            _redisListName = redisListName;
-
             Id = queueid;
+            _queue = queue;
         }
 
         public Task Initialize(TimeSpan timeout)
@@ -37,28 +33,11 @@ namespace PipeStreamProvider
 
         public Task<IList<IBatchContainer>> GetQueueMessagesAsync(int maxCount)
         {
-            if (!_database.KeyExists(_redisListName))
-                return Task.FromResult<IList<IBatchContainer>>(new List<IBatchContainer>());
-
             var listOfMessages = new List<byte[]>();
 
-            var listLength = _database.ListLength(_redisListName);
-            var max = Math.Max(maxCount, listLength);
-            
-            for (var i = 0; i < max; i++)
-            {
-                try
-                {
-                    var nextMsg = _database.ListRightPop(_redisListName);
-                    if (!nextMsg.IsNull)
-                        listOfMessages.Add(nextMsg);
-                }
-                catch (Exception exception)
-                {
-                    _logger.AutoError($"Couldn't read from Redis list {_redisListName}, exception: {exception}");
-                    break;
-                }
-            }
+            var min = Math.Min(maxCount, _queue.Count);
+            for (var i = 0; i < min; i++)
+                listOfMessages.Add(_queue.Dequeue());
 
             var list = (from m in listOfMessages select SerializationManager.DeserializeFromByteArray<PipeQueueAdapterBatchContainer>(m));
             var pipeQueueAdapterBatchContainers = list as IList<PipeQueueAdapterBatchContainer> ?? list.ToList();
