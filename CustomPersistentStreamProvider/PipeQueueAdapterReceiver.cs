@@ -77,7 +77,8 @@ namespace PipeStreamProvider
 
         public Task Shutdown(TimeSpan timeout)
         {
-            throw new NotImplementedException();
+            Console.WriteLine("Receiver shutting");
+            return TaskDone.Done;
         }
     }
 }

@@ -5,13 +5,13 @@
 -->
 <ClientConfiguration xmlns="urn:orleans">
   <GatewayProvider ProviderType="Config"/>
-  <Gateway Address="localhost" Port="30000"/>
+  <Gateway Address="169.183.186.58" Port="30000"/>
   <Statistics MetricsTableWriteInterval="30s" PerfCounterWriteInterval="30s" LogWriteInterval="300s" WriteLogStatisticsToTable="true"/>
   <Tracing DefaultTraceLevel="Warning" TraceToConsole="true" TraceToFile="{0}-{1}.log">
     <!--<TraceLevelOverride LogPrefix="Application" TraceLevel="Info" />-->
   </Tracing>
   <StreamProviders>
     <Provider Type="Orleans.Providers.Streams.SimpleMessageStream.SimpleMessageStreamProvider" Name="SMSProvider"/>
-    <Provider Type="PipeStreamProvider.PipeStreamProvider" Name="PSProvider"/>
+    <Provider Type="PipeStreamProvider.PipeStreamProvider" Name="PSProvider" NumQueues="2" Server="169.183.186.58:6379"/>
   </StreamProviders>
 </ClientConfiguration>

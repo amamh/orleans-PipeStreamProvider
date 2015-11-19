@@ -58,6 +58,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CustomPersistentStreamProvider\PipeStreamProvider.csproj">
+      <Project>{032b1fdf-a8e7-4111-87e1-38785b8841b5}</Project>
+      <Name>PipeStreamProvider</Name>
+    </ProjectReference>
     <ProjectReference Include="..\GrainInterfaces\GrainInterfaces.csproj">
       <Project>{8799b6c8-14b6-4f8e-84d7-69158d7ecd70}</Project>
       <Name>GrainInterfaces</Name>
@@ -66,6 +70,7 @@
   <ItemGroup>
     <Content Include="ClientConfiguration.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
