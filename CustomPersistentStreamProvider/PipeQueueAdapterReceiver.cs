@@ -50,13 +50,16 @@ namespace PipeStreamProvider
 
         public Task MessagesDeliveredAsync(IList<IBatchContainer> messages)
         {
-            _logger.AutoVerbose($"Delivered {messages.Count}, last one has token {messages.Last().SequenceToken}");
+            var count = messages == null ? 0 : messages.Count;
+            var lastToken = messages?.Count != 0 ? messages?.Last()?.SequenceToken.ToString() : "--";
+            _logger.AutoVerbose($"Delivered {count}, last one has token {lastToken}");
             return TaskDone.Done;
         }
 
         public Task Shutdown(TimeSpan timeout)
         {
-            throw new NotImplementedException();
+            _logger.AutoInfo("Receiver requested to shutdown.");
+            return TaskDone.Done;
         }
     }
 }
