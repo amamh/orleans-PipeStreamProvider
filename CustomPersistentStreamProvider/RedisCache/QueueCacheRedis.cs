@@ -2,22 +2,19 @@
 using Orleans.Runtime;
 using Orleans.Serialization;
 using Orleans.Streams;
-using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using StackExchange.Redis;
 
 namespace PipeStreamProvider.RedisCache
 {
     public class QueueCacheRedis : IQueueCache
     {
-        private readonly ConnectionMultiplexer _conn;
         private readonly Logger _logger;
-        private string _redisHashName;
-        private IDatabase _db;
         private readonly RedisCustomList<IBatchContainer> _cache;
 
         public QueueId Id { get; }
@@ -28,11 +25,10 @@ namespace PipeStreamProvider.RedisCache
         public QueueCacheRedis(QueueId id, Logger logger, IDatabase db)
         {
             Id = id;
-            _db = db;
             _logger = logger;
             // FIXME: What else do we need to make sure no clash happens?
-            _redisHashName = $"orleans-pipecache-{id}";
-            _cache = new RedisCustomList<IBatchContainer>(_db, _redisHashName, _logger);
+            string redisHashName = $"orleans-pipecache-{id}";
+            _cache = new RedisCustomList<IBatchContainer>(db, redisHashName, _logger);
         }
 
         public void AddToCache(IList<IBatchContainer> messages)
