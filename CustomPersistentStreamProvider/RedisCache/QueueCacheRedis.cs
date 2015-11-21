@@ -21,7 +21,7 @@ namespace PipeStreamProvider.RedisCache
         private readonly RedisCustomList<IBatchContainer> _cache;
 
         public QueueId Id { get; }
-        public int MaxAddCount { get; }
+        public int MaxAddCount { get; } = 1024; // some sensible number
 
         public int Size => _cache.Count;
 
