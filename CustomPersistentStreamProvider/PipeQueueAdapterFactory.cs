@@ -79,13 +79,6 @@ namespace PipeStreamProvider
             }
 
             _streamQueueMapper = new HashRingBasedStreamQueueMapper(_numQueues, providerName);
-            // FIXME
-             ConnectionMultiplexer.ConnectAsync(_server).ContinueWith((t) =>
-            {
-                _connection = t.Result;
-                _db = _connection.GetDatabase(_databaseNum);
-                _adapterCache = new QueueAdapterCacheRedis(_logger, _db);
-            });
         }
 
         public Task<IQueueAdapter> CreateAdapter()
@@ -96,7 +89,18 @@ namespace PipeStreamProvider
 
         public IQueueAdapterCache GetQueueAdapterCache()
         {
-            return _adapterCache;
+            MakeSureRedisConnected();
+            return _adapterCache ?? (_adapterCache = new QueueAdapterCacheRedis(_logger, _db));
+        }
+
+        private void MakeSureRedisConnected()
+        {
+            if (_connection?.IsConnected == true)
+                return;
+
+            // Note: using non-async Connect doesn't work
+            _connection = ConnectionMultiplexer.ConnectAsync(_server).Result;
+            _db = _connection.GetDatabase(_databaseNum);
         }
 
         public IStreamQueueMapper GetStreamQueueMapper()

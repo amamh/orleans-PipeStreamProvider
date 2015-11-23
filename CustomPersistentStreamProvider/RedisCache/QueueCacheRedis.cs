@@ -26,8 +26,7 @@ namespace PipeStreamProvider.RedisCache
         {
             Id = id;
             _logger = logger;
-            // FIXME: What else do we need to make sure no clash happens?
-            string redisHashName = $"orleans-pipecache-{id}";
+            string redisHashName = $"{Environment.MachineName}-{DateTime.UtcNow}-orleans-pipecache-{id}";
             _cache = new RedisCustomList<IBatchContainer>(db, redisHashName, _logger);
         }
 
