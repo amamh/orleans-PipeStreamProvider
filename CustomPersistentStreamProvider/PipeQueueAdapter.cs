@@ -31,12 +31,10 @@ namespace PipeStreamProvider
             _server = server;
             _redisListBaseName = redisListBaseName;
 
-            ConnectionMultiplexer.ConnectAsync(_server).ContinueWith(task =>
-            {
-                _connection = task.Result;
-                _database = _connection.GetDatabase(_databaseNum);
-                _logger.AutoInfo($"connection to Redis successful.");
-            });
+            // Note: using non-async Connect doesn't work
+            _connection = ConnectionMultiplexer.ConnectAsync(_server).Result;
+            _database = _connection.GetDatabase(_databaseNum);
+            _logger.AutoInfo($"connection to Redis successful.");
 
             Name = name;
         }
@@ -44,12 +42,6 @@ namespace PipeStreamProvider
         public Task QueueMessageBatchAsync<T>(Guid streamGuid, string streamNamespace, IEnumerable<T> events, StreamSequenceToken token,
             Dictionary<string, object> requestContext)
         {
-            if (_database == null)
-            {
-                _logger.AutoWarn($"Trying to write before connection is made to Redis. This batch of data was ignored.");
-                return TaskDone.Done;
-            }
-
             if (events == null)
             {
                 throw new ArgumentNullException(nameof(events), "Trying to QueueMessageBatchAsync null data.");
