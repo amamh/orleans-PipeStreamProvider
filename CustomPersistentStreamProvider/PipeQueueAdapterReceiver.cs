@@ -41,8 +41,9 @@ namespace PipeStreamProvider
 
             var list = (from m in listOfMessages select SerializationManager.DeserializeFromByteArray<PipeQueueAdapterBatchContainer>(m));
             var pipeQueueAdapterBatchContainers = list as IList<PipeQueueAdapterBatchContainer> ?? list.ToList();
+            // Set stream sequence tokens
             foreach (var batchContainer in pipeQueueAdapterBatchContainers)
-                batchContainer.EventSequenceToken = new EventSequenceToken(_sequenceId++);
+                batchContainer.SimpleSequenceToken = new SimpleSequenceToken(_sequenceId++);
 
             _logger.AutoVerbose($"Read {pipeQueueAdapterBatchContainers.Count} batch containers");
             return Task.FromResult<IList<IBatchContainer>>(pipeQueueAdapterBatchContainers.ToList<IBatchContainer>());

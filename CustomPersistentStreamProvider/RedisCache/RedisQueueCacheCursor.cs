@@ -1,4 +1,5 @@
-﻿using Orleans.Streams;
+﻿using Orleans.Providers.Streams.Common;
+using Orleans.Streams;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,21 +10,25 @@ namespace PipeStreamProvider.RedisCache
 {
     public class QueueCacheRedisCursor : IQueueCacheCursor
     {
-        private readonly RedisCustomList<IBatchContainer> _cache;
-        private int _index = 0;
+        internal StreamSequenceToken OldestPossibleToken { get; } = new SimpleSequenceToken(0);
 
+        private readonly RedisCustomList<IBatchContainer> _cache;
         private readonly string _namespace;
         private readonly Guid _stream;
-        private StreamSequenceToken _token;
+        private readonly SimpleSequenceToken _startToken;
+        private long _index = 0;
 
-        public QueueCacheRedisCursor(RedisCustomList<IBatchContainer> cache, string streamNamespace, Guid streamGuid, StreamSequenceToken token)
+        public QueueCacheRedisCursor(RedisCustomList<IBatchContainer> cache, string streamNamespace, Guid streamGuid, SimpleSequenceToken token)
         {
+            if (token.Older(OldestPossibleToken))
+                throw new QueueCacheMissException($"Can't ask for a token older than SimpleSequenceToken(0). Requested token:\n{token}");
+
             _cache = cache;
             _namespace = streamNamespace;
             _stream = streamGuid;
-            _token = token;
+            _startToken = token;
+            _index = _startToken == null ? 0 : _startToken.SequenceNumber;
         }
-
         public IBatchContainer GetCurrent(out Exception exception)
         {
             try

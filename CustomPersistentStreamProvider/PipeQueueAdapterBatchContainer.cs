@@ -14,12 +14,12 @@ namespace PipeStreamProvider
         private readonly Dictionary<string, object> _requestContext;
         private readonly List<object> _events;
 
-        public EventSequenceToken EventSequenceToken { get; set; }
+        public SimpleSequenceToken SimpleSequenceToken { get; set; }
 
         public Guid StreamGuid { get; }
         public string StreamNamespace { get; }
 
-        public StreamSequenceToken SequenceToken => EventSequenceToken;
+        public StreamSequenceToken SequenceToken => SimpleSequenceToken;
 
         public PipeQueueAdapterBatchContainer(Guid streamGuid, string streamNamespace, List<object> events, Dictionary<string, object> requestContext)
         {
@@ -33,7 +33,7 @@ namespace PipeStreamProvider
 
         public IEnumerable<Tuple<T, StreamSequenceToken>> GetEvents<T>()
         {
-            return _events.OfType<T>().Select((e, i) => Tuple.Create(e, (StreamSequenceToken)EventSequenceToken.CreateSequenceTokenForEvent(i)));
+            return _events.OfType<T>().Select((e, i) => Tuple.Create(e, (StreamSequenceToken)SimpleSequenceToken.CreateSequenceTokenForEvent(i)));
         }
 
         public bool ImportRequestContext()

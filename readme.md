@@ -25,7 +25,7 @@ The stream is made replayable by having a new IQueueCache implementation instead
   
 # Sample
 
-The sample provided will start a producer, wait a few seconds then start a consumer which will ask for the stream to replayed since the start. That last part is done by`await stream.SubscribeAsync(this, new EventSequenceToken(0));` i.e. by asking for event sequence token 0 which will always be the first message received on the stream.
+The sample provided will start a producer, wait a few seconds then start a consumer which will ask for the stream to replayed since the start. That last part is done by`await stream.SubscribeAsync(this, new SimpleSequenceToken(0));` i.e. by asking for event sequence token 0 which will always be the first message received on the stream.
 
 # Future
 

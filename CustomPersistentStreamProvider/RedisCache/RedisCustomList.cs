@@ -9,6 +9,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+// TODO: We can improve the performance using pipelining: _db.CreateTransaction
+// This will at least reduce communication. In Python, a speedup of 5x can be achieved http://blog.jmoz.co.uk/python-redis-py-pipeline/
+// Will probably have a bigger impact if Redis is running on a different machine.
+
 namespace PipeStreamProvider.RedisCache
 {
     /// <summary>
@@ -20,9 +24,9 @@ namespace PipeStreamProvider.RedisCache
         private readonly IDatabase _db;
         private readonly RedisKey _key;
         private readonly Logger _logger;
-        private int _lastIndx = 0;
-        private int _firstIndx = 0;
-        public int Count { get; private set; } = 0;
+        private long _lastIndx = 0;
+        private long _firstIndx = 0;
+        public long Count { get; private set; } = 0;
 
         public RedisCustomList(IDatabase db, string redisKey, Logger logger)
         {
@@ -37,7 +41,7 @@ namespace PipeStreamProvider.RedisCache
             }
         }
 
-        public T Get(int index)
+        public T Get(long index)
         {
             AssertExists(index);
 
@@ -46,7 +50,7 @@ namespace PipeStreamProvider.RedisCache
             return item;
         }
 
-        public bool Set(int index, T newVal)
+        public bool Set(long index, T newVal)
         {
             AssertExists(index);
 
@@ -62,6 +66,7 @@ namespace PipeStreamProvider.RedisCache
             {
                 _firstIndx--;
                 Count++;
+                Debug.Assert(_db.HashLength(_key) == Count);
                 return true;
             }
             return false;
@@ -75,6 +80,7 @@ namespace PipeStreamProvider.RedisCache
             {
                 _lastIndx++;
                 Count++;
+                Debug.Assert(_db.HashLength(_key) == Count);
                 return true;
             }
             return false;
@@ -87,8 +93,10 @@ namespace PipeStreamProvider.RedisCache
 
             var bytes = _db.HashGet(_key, _firstIndx);
             var item = SerializationManager.DeserializeFromByteArray<T>(bytes);
+            _db.HashDelete(_key, _firstIndx);
 
             Count--;
+            Debug.Assert(_db.HashLength(_key) == Count);
             _firstIndx = _firstIndx == 0 ? 0 : _firstIndx++;
 
             return item;
@@ -101,14 +109,16 @@ namespace PipeStreamProvider.RedisCache
 
             var bytes = _db.HashGet(_key, _lastIndx);
             var item = SerializationManager.DeserializeFromByteArray<T>(bytes);
+            _db.HashDelete(_key, _lastIndx);
 
             Count--;
+            Debug.Assert(_db.HashLength(_key) == Count);
             _lastIndx = _lastIndx == 0 ? 0 : _lastIndx--;
 
             return item;
         }
 
-        private void AssertExists(int index)
+        private void AssertExists(long index)
         {
             if (index < _firstIndx || index > _lastIndx || Count == 0)
                 throw new QueueCacheMissException($"Trying to get index {index} from redis linked list which is outside range {_firstIndx}-{_lastIndx}.");

@@ -25,14 +25,13 @@ namespace Producer
                 }
             }
 
-            var i = 0;
-            while (true)
+            //var i = 0;
+            for (int i = 0; i < 100; i++)
             {
-                Task.Delay(500).Wait();
+                Task.Delay(50).Wait();
                 var grain = GrainClient.GrainFactory.GetGrain<ISampleDataGrain>(0);
                 grain.SetRandomData(i).Wait();
-                Console.WriteLine("Writing....: " + i);
-                i++;
+                Console.WriteLine($"Writing....: {i}\t\t{DateTime.UtcNow.Millisecond}");
             }
         }
     }

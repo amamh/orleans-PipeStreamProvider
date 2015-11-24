@@ -13,7 +13,7 @@ namespace Client
         {
             var ccGrain = GrainClient.GrainFactory.GetGrain<ISampleDataGrain>(0);
             var stream = await ccGrain.GetStream();
-            await stream.SubscribeAsync(this, new EventSequenceToken(0));
+            await stream.SubscribeAsync(this, new PipeStreamProvider.SimpleSequenceToken(0));
         }
 
         public async Task Subscribe2()
@@ -29,12 +29,12 @@ namespace Client
             var provider = GrainClient.GetStreamProvider(providerName);
             var stream = provider.GetStream<int>(guid, nameSpace);
 
-            await stream.SubscribeAsync(this, new EventSequenceToken(0));
+            await stream.SubscribeAsync(this, new PipeStreamProvider.SimpleSequenceToken(0));
         }
 
         public Task OnNextAsync(int item, StreamSequenceToken token = null)
         {
-            Console.WriteLine(item);
+            Console.WriteLine($"{item}\t\t{DateTime.UtcNow.Millisecond}");
             return TaskDone.Done;
         }
 

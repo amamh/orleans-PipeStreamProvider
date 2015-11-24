@@ -42,7 +42,7 @@ namespace GrainCollections
 
         public async Task Subscribe(IAsyncObserver<int> observer, bool recover = false)
         {
-            await _stream.SubscribeAsync(observer, recover ? new EventSequenceToken(0) : null);
+            await _stream.SubscribeAsync(observer, recover ? new PipeStreamProvider.SimpleSequenceToken(0) : null);
         }
         public Task<Tuple<string, string, Guid>> GetStreamDetails()
         {

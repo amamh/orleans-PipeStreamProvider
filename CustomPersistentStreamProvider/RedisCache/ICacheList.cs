@@ -5,13 +5,13 @@ namespace PipeStreamProvider.RedisCache
 {
     public interface ICacheList<T>
     {
-        T Get(int index);
+        T Get(long index);
         T LeftPop();
         bool LeftPush(T v);
         T RightPop();
         bool RightPush(T v);
-        bool Set(int index, T newVal);
+        bool Set(long index, T newVal);
 
-        int Count { get; }
+        long Count { get; }
     }
 }

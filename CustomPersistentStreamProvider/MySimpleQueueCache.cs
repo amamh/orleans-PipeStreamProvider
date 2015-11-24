@@ -47,7 +47,7 @@ namespace PipeStreamProvider
 
         public QueueId Id { get; }
 
-        internal EventSequenceToken OldestPossibleToken { get; } = new EventSequenceToken(0);
+        internal SimpleSequenceToken OldestPossibleToken { get; } = new SimpleSequenceToken(0);
         internal SimpleQueueCacheItem? OldestMessage => _coldCache?.Last?.Value ?? _cachedMessages?.Last?.Value;
         internal SimpleQueueCacheItem? LastMessage => _cachedMessages?.First?.Value ?? _coldCache?.First?.Value;
 
@@ -134,10 +134,10 @@ namespace PipeStreamProvider
 
         public virtual IQueueCacheCursor GetCacheCursor(Guid streamGuid, string streamNamespace, StreamSequenceToken token)
         {
-            if (token != null && !(token is EventSequenceToken))
+            if (token != null && !(token is SimpleSequenceToken))
             {
                 // Null token can come from a stream subscriber that is just interested to start consuming from latest (the most recent event added to the cache).
-                throw new ArgumentOutOfRangeException(nameof(token), "token must be of type EventSequenceToken");
+                throw new ArgumentOutOfRangeException(nameof(token), "token must be of type SimpleSequenceToken");
             }
 
             var cursor = new MySimpleQueueCacheCursor(this, streamGuid, streamNamespace, _logger);
@@ -151,7 +151,7 @@ namespace PipeStreamProvider
             // if offset is not set, iterate from newest (first) message in cache, but not including the first message itself
             if (sequenceToken == null)
             {
-                var tokenToReset = ((EventSequenceToken)_lastSequenceTokenAddedToCache)?.NextSequenceNumber();
+                var tokenToReset = ((SimpleSequenceToken)_lastSequenceTokenAddedToCache)?.NextSequenceNumber();
                 ResetCursor(cursor, tokenToReset);
                 return;
             }
@@ -256,7 +256,7 @@ namespace PipeStreamProvider
             if (cursor.Element == _cachedMessages.First)
             {
                 // If we are at the end of the cache unset cursor and move offset one forward
-                ResetCursor(cursor, ((EventSequenceToken)cursor.SequenceToken).NextSequenceNumber());
+                ResetCursor(cursor, ((SimpleSequenceToken)cursor.SequenceToken).NextSequenceNumber());
             }
             else // move to next
             {
@@ -267,7 +267,7 @@ namespace PipeStreamProvider
                     if (_cachedMessages.Count == 0)
                     {
                         // Do the same as when the cursor is at the head of the hot cache
-                        ResetCursor(cursor, ((EventSequenceToken)cursor.SequenceToken).NextSequenceNumber());
+                        ResetCursor(cursor, ((SimpleSequenceToken)cursor.SequenceToken).NextSequenceNumber());
                         return true;
                     }
                     // There is something in hot cache, start replaying that i.e. set the cursor to the start of the hot cache

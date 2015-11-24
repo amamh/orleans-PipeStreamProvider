@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using StackExchange.Redis;
+using Orleans.Providers.Streams.Common;
 
 namespace PipeStreamProvider.RedisCache
 {
@@ -20,7 +21,7 @@ namespace PipeStreamProvider.RedisCache
         public QueueId Id { get; }
         public int MaxAddCount { get; } = 1024; // some sensible number
 
-        public int Size => _cache.Count;
+        public int Size => (int)_cache.Count; // WARNING
 
         public QueueCacheRedis(QueueId id, Logger logger, IDatabase db)
         {
@@ -39,7 +40,13 @@ namespace PipeStreamProvider.RedisCache
 
         public IQueueCacheCursor GetCacheCursor(Guid streamGuid, string streamNamespace, StreamSequenceToken token)
         {
-            return new QueueCacheRedisCursor(_cache, streamNamespace, streamGuid, token);
+            if (token != null && !(token is SimpleSequenceToken))
+            {
+                // Null token can come from a stream subscriber that is just interested to start consuming from latest (the most recent event added to the cache).
+                throw new ArgumentOutOfRangeException("token", "token must be of type SimpleSequenceToken");
+            }
+
+            return new QueueCacheRedisCursor(_cache, streamNamespace, streamGuid, token as SimpleSequenceToken);
         }
 
         public bool IsUnderPressure()

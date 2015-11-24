@@ -17,7 +17,7 @@ namespace GrainCollections
         {
             var ccGrain = GrainFactory.GetGrain<ISampleDataGrain>(0);
             //var stream = await ccGrain.GetStream();
-            //_handler = await stream.SubscribeAsync(this, new EventSequenceToken(0));
+            //_handler = await stream.SubscribeAsync(this, new SimpleSequenceToken(0));
 
             //var details = await ccGrain.GetStreamDetails();
             //var providerName = details.Item1;

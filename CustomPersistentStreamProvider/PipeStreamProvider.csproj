@@ -64,10 +64,11 @@
     <Compile Include="PipeQueueAdapterReceiver.cs" />
     <Compile Include="PipeStreamProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RedisCache\QueueAdapterCacheRedis.cs" />
-    <Compile Include="RedisCache\QueueCacheRedis.cs" />
-    <Compile Include="RedisCache\QueueCacheRedisCursor.cs" />
+    <Compile Include="RedisCache\RedisQueueAdapterCache.cs" />
+    <Compile Include="RedisCache\RedisQueueCache.cs" />
+    <Compile Include="RedisCache\RedisQueueCacheCursor.cs" />
     <Compile Include="RedisCache\RedisCustomList.cs" />
+    <Compile Include="SimpleSequenceToken.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
