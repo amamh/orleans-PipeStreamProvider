@@ -4,7 +4,7 @@ using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
 using Orleans.Streams;
 
-namespace PipeStreamProvider
+namespace PipeStreamProvider.MemoryCache
 {
     public class MySimpleQueueCacheCursor : IQueueCacheCursor
     {

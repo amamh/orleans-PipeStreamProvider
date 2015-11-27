@@ -10,7 +10,7 @@
     </StorageProviders>
     <StreamProviders>
       <Provider Type="Orleans.Providers.Streams.SimpleMessageStream.SimpleMessageStreamProvider" Name="SMSProvider"/>
-      <Provider Type="PipeStreamProvider.PipeStreamProvider" Name="PSProvider" NumQueues="2"/>
+      <Provider Type="PipeStreamProvider.PipeStreamProvider" Name="PSProvider" NumQueues="100" UseRedisForCache="true"/>
     </StreamProviders>
     <SeedNode Address="localhost" Port="11111" />
   </Globals>
