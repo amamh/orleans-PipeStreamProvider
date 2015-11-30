@@ -12,20 +12,20 @@
     </StorageProviders>
     <StreamProviders>
       <Provider Type="Orleans.Providers.Streams.SimpleMessageStream.SimpleMessageStreamProvider" Name="SMSProvider"/>
-      <Provider Type="PipeStreamProvider.PipeStreamProvider" Name="PSProvider" NumQueues="2" Server="169.183.186.58:6379"/>
+      <Provider Type="PipeStreamProvider.PipeStreamProvider" Name="PSProvider" NumQueues="2" Server="localhost:6379"/>
     </StreamProviders>
-    <SeedNode Address="169.183.186.58" Port="11111" />
+    <SeedNode Address="localhost" Port="11111" />
   </Globals>
   <Defaults>
-    <Networking Address="169.183.186.58" Port="11112" />
-    <ProxyingGateway Address="169.183.186.58" Port="30001" />
+    <Networking Address="localhost" Port="11112" />
+    <ProxyingGateway Address="localhost" Port="30001" />
     <Tracing DefaultTraceLevel="Warning" TraceToConsole="true" TraceToFile="{0}-{1}.log">
       <TraceLevelOverride LogPrefix="Application" TraceLevel="Info" />
     </Tracing>
     <Statistics MetricsTableWriteInterval="30s" PerfCounterWriteInterval="30s" LogWriteInterval="300s" WriteLogStatisticsToTable="true"/>
   </Defaults>
   <Override Node="Secondary">
-    <Networking Address="169.183.186.58" Port="11112" />
-    <ProxyingGateway Address="169.183.186.58" Port="30001" />
+    <Networking Address="localhost" Port="11112" />
+    <ProxyingGateway Address="localhost" Port="30001" />
   </Override>
 </OrleansConfiguration>
