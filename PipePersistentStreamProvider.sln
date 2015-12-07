@@ -23,6 +23,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrleansServer2", "OrleansServer2\OrleansServer2.csproj", "{FC2B3144-87B6-4630-B944-B582E013AECB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrleansServer3", "OrleansServer3\OrleansServer3.csproj", "{97DBCEFA-878B-4504-BFAE-86AE807C1A76}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,10 @@ Global
 		{FC2B3144-87B6-4630-B944-B582E013AECB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FC2B3144-87B6-4630-B944-B582E013AECB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FC2B3144-87B6-4630-B944-B582E013AECB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97DBCEFA-878B-4504-BFAE-86AE807C1A76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97DBCEFA-878B-4504-BFAE-86AE807C1A76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97DBCEFA-878B-4504-BFAE-86AE807C1A76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97DBCEFA-878B-4504-BFAE-86AE807C1A76}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
