@@ -5,6 +5,7 @@ using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
 using Orleans.Streams;
 
+// TODO: Scrap this and do it from scratch without all this complexity
 namespace PipeStreamProvider.MemoryCache
 {
     internal class CacheBucket

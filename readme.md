@@ -1,32 +1,23 @@
-# Purpose
-
+# Summary
 - An example of a PersistentStreamProvider with a custom adapter.
 - A way to implement replayable streams using a custom IQueueCache i.e. the client can ask to replay past events.
+  - The cache can either be in-memory or on Redis. To use Redis for caching, set `UseRedisForCache="true"` in the provider line in server config.  
+- You can configure Redis connection using:
+    - `Server` => Redis server (default: "localhost:6379")  
+    - `RedisDb` => database number (default: -1)
 
 # Note
-
 This is using an in-memory queue as a placeholder instead of a physical queue, for pratical use, you should replace that with your own queue choice.
-For an example of how to do that, check 'redis' branch.
+The in-memory queue works fine when running this sample on the same machine with one server. However, this sample is writing from a grain i.e. the writes happen on the server and the reads also since the receiver is created on the server, so this setup works fine with an in-memory queue.
 
 # Implementation
+The stream is made replayable by having a IQueueCache implementation that keeps all the data that have been received so far.
 
-This is based on the Azure Queue Stream Provider which is included in Orleans. The main change was replacing Azure Queue with a .NET Queue.
-
-The stream is made replayable by having a new IQueueCache implementation instead of SimpleQueueCache which is used in Azure Queue Stream. The idea was to keep the original SimpleQueueCache as intact as possible to make the implementation simpler:
-
-- Add a field `_coldCache`. This will hold all messages that get out of the normal/"hot" cache and will be used to replay.
-- Change the three methods:
-  - `EmptyBucket`:
-    - Add to `_coldCache` every time a bucket is emptied i.e. `_coldCache` will have old messages.
-  - `InitializeCursor`:
-    - Check if the client wants older messages i.e. check the start SequenceToken and set the cache cursor accordingly.
-  - `TryGetNextMessage`:
-    - Do the same as before except we now have to account for the case when `_coldCache` has been replayed and the cursor now needs to point to the normal cache as is the case when the client doesn't ask to replay old messages.
-  
 # Sample
-
 The sample provided will start a producer, wait a few seconds then start a consumer which will ask for the stream to replayed since the start. That last part is done by`await stream.SubscribeAsync(this, new SimpleSequenceToken(0));` i.e. by asking for event sequence token 0 which will always be the first message received on the stream.
 
-# Future
+The config is setup so that the server will use Redis for caching with the default connection parameters assuming Redis is running on the local machine.
 
-- Use persistent memory for `_coldCache`
+# Future
+- Make the physical queue pluggable i.e. make this usable with any given queue implementation. After that, remove `redis` branch and make it an option to use Redis as an example of a pluggable physical queue implementation.
+- Clean up the memory cache to be simple and similar to the Redis one. It's currently very complicated because it was originally based on the implementation of one of the Azure streams.
