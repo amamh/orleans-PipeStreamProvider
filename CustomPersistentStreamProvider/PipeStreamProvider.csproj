@@ -52,6 +52,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PhysicalQueues\Redis\Adapter.cs" />
+    <Compile Include="PhysicalQueues\Redis\Receiver.cs" />
     <Compile Include="RedisCache\ICacheList.cs" />
     <Compile Include="LoggerExtensions.cs" />
     <Compile Include="MemoryCache\MySimpleQueueCache.cs" />

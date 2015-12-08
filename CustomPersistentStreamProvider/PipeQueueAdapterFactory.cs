@@ -30,12 +30,17 @@ namespace PipeStreamProvider
         private const bool DefaultUseRedisForCache = false;
         private bool _useRedisForCache;
 
+        // TODO: This should be an enum to choose which physical queue to use
+        private const string UseRedisForQueueParam = "UseRedisForQueue";
+        private const bool DefaultUseRedisForQueue = false;
+        private bool _useRedisForQueue;
+
         private string _providerName;
         private Logger _logger;
         private HashRingBasedStreamQueueMapper _streamQueueMapper;
         private IQueueAdapterCache _adapterCache;
-        private ConnectionMultiplexer _connection;
-        private IDatabase _db;
+        private ConnectionMultiplexer _redisConn; // TODO: Dispose
+        private IDatabase _redisDb;
 
         public void Init(IProviderConfiguration config, string providerName, Logger logger)
         {
@@ -61,46 +66,67 @@ namespace PipeStreamProvider
                     throw new ArgumentException($"{NumQueuesParam} invalid.  Must be int");
             }
 
-            // Use Redis?
-            string useRedis;
+            // Use Redis for cache?
+            string useRedisCache;
             _useRedisForCache = DefaultUseRedisForCache;
-            if (config.Properties.TryGetValue(UseRedisForCacheParam, out useRedis))
+            if (config.Properties.TryGetValue(UseRedisForCacheParam, out useRedisCache))
             {
-                if (!bool.TryParse(useRedis, out _useRedisForCache))
-                    throw new ArgumentException($"{UseRedisForCacheParam} invalid value {useRedis}");
+                if (!bool.TryParse(useRedisCache, out _useRedisForCache))
+                    throw new ArgumentException($"{UseRedisForCacheParam} invalid value {useRedisCache}");
+            }
+
+            // Use Redis for queue?
+            string useRedis;
+            _useRedisForQueue = DefaultUseRedisForQueue;
+            if (config.Properties.TryGetValue(UseRedisForQueueParam, out useRedis))
+            {
+                if (!bool.TryParse(useRedis, out _useRedisForQueue))
+                    throw new ArgumentException($"{UseRedisForQueueParam} invalid value {useRedis}");
             }
 
             if (_useRedisForCache)
-            {
-                // server
-                string server;
-                _server = DefaultServer;
-                if (config.Properties.TryGetValue(ServerParam, out server))
-                {
-                    if (server == "")
-                        throw new ArgumentException($"{DefaultServer} invalid. Must not be empty");
-                    _server = server;
-                }
+                ReadRedisConnectionParams(config);
 
-                // db
-                string dbNum;
-                _databaseNum = DefaultRedisDb;
-                if (config.Properties.TryGetValue(RedisDbParam, out dbNum))
-                {
-                    if (!int.TryParse(dbNum, out _databaseNum))
-                        throw new ArgumentException($"{RedisDbParam} invalid.  Must be int");
-                    if (_databaseNum > 15 || _databaseNum < 0)
-                        throw new ArgumentException($"{RedisDbParam} invalid.  Must be from 0 to 15");
-                }
-            }
+            if (_useRedisForQueue)
+                // this will be a duplicate step if we are using redis for cache, but it's better to separate the logic
+                ReadRedisConnectionParams(config);
 
             _streamQueueMapper = new HashRingBasedStreamQueueMapper(_numQueues, providerName);
+        }
+
+        private void ReadRedisConnectionParams(IProviderConfiguration config)
+        {
+            // server
+            string server;
+            _server = DefaultServer;
+            if (config.Properties.TryGetValue(ServerParam, out server))
+            {
+                if (server == "")
+                    throw new ArgumentException($"{DefaultServer} invalid. Must not be empty");
+                _server = server;
+            }
+
+            // db
+            string dbNum;
+            _databaseNum = DefaultRedisDb;
+            if (config.Properties.TryGetValue(RedisDbParam, out dbNum))
+            {
+                if (!int.TryParse(dbNum, out _databaseNum))
+                    throw new ArgumentException($"{RedisDbParam} invalid.  Must be int");
+                if (_databaseNum > 15 || _databaseNum < 0)
+                    throw new ArgumentException($"{RedisDbParam} invalid.  Must be from 0 to 15");
+            }
         }
 
         public Task<IQueueAdapter> CreateAdapter()
         {
             // In AzureQueueAdapterFactory an adapter is made per call, so we do the same
-            var adapter = new PipeQueueAdapter(_logger, GetStreamQueueMapper(), _providerName);
+            IQueueAdapter adapter;
+            if (_useRedisForQueue)
+                adapter = new PhysicalQueues.Redis.RedisQueueAdapter(_logger, GetStreamQueueMapper(), _providerName, _server, _databaseNum);
+            else
+                adapter = new PipeQueueAdapter(_logger, GetStreamQueueMapper(), _providerName);
+
             return Task.FromResult<IQueueAdapter>(adapter);
         }
 
@@ -109,7 +135,7 @@ namespace PipeStreamProvider
             if (_useRedisForCache)
             {
                 MakeSureRedisConnected();
-                return _adapterCache ?? (_adapterCache = new RedisCache.QueueAdapterCacheRedis(_logger, _db));
+                return _adapterCache ?? (_adapterCache = new RedisCache.QueueAdapterCacheRedis(_logger, _redisDb));
             }
 
             return _adapterCache ?? (_adapterCache = new MemoryCache.MySimpleQueueAdapterCache(this, _cacheSize, _logger));
@@ -127,12 +153,12 @@ namespace PipeStreamProvider
 
         private void MakeSureRedisConnected()
         {
-            if (_connection?.IsConnected == true)
+            if (_redisConn?.IsConnected == true)
                 return;
 
             // Note: using non-async Connect doesn't work
-            _connection = ConnectionMultiplexer.ConnectAsync(_server).Result;
-            _db = _connection.GetDatabase(_databaseNum);
+            _redisConn = ConnectionMultiplexer.ConnectAsync(_server).Result;
+            _redisDb = _redisConn.GetDatabase(_databaseNum);
         }
     }
 }
