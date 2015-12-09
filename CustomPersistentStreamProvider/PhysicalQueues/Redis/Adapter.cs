@@ -21,7 +21,7 @@ namespace PipeStreamProvider.PhysicalQueues.Redis
         //private readonly int _databaseNum;
         //private readonly string _server;
         private IDatabase _database;
-        const string RedisListBaseName = "OrleansQueue";
+        private string _redisListBaseName = "OrleansQueue";
 
         public RedisQueueAdapter(Logger logger, IStreamQueueMapper streamQueueMapper, string name, string server, int database)
         {
@@ -46,6 +46,8 @@ namespace PipeStreamProvider.PhysicalQueues.Redis
             _database = db;
 
             Name = name;
+
+            _redisListBaseName = $"{Environment.MachineName}-{DateTime.UtcNow}-orleans-{Name}-queue";
         }
 
         public Task QueueMessageBatchAsync<T>(Guid streamGuid, string streamNamespace, IEnumerable<T> events, StreamSequenceToken token,
@@ -85,7 +87,7 @@ namespace PipeStreamProvider.PhysicalQueues.Redis
 
         private string GetRedisListName(QueueId queueId)
         {
-            return RedisListBaseName + queueId;
+            return $"{_redisListBaseName}-{queueId}";
         }
 
         public IQueueAdapterReceiver CreateReceiver(QueueId queueId)
