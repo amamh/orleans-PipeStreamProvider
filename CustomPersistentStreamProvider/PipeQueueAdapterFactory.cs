@@ -89,9 +89,9 @@ namespace PipeStreamProvider
             if (_useRedisForCache)
                 ReadRedisConnectionParams(config);
 
-            if (_useRedisForQueue)
-                // this will be a duplicate step if we are using redis for cache, but it's better to separate the logic
-                ReadRedisConnectionParams(config);
+            //if (_useRedisForQueue)
+            //    // this will be a duplicate step if we are using redis for cache, but it's better to separate the logic
+            //    ReadRedisConnectionParams(config);
 
             _streamQueueMapper = new HashRingBasedStreamQueueMapper(_numQueues, providerName);
         }
@@ -128,10 +128,13 @@ namespace PipeStreamProvider
             {
                 //adapter = new PhysicalQueues.Redis.RedisQueueAdapter(_logger, GetStreamQueueMapper(), _providerName, _server, _databaseNum);
                 var redisQueueProvider = new PhysicalQueues.Redis.RedisQueueProvider();
-                adapter = new PhysicalQueues.Redis.GenericQueueAdapter(_logger, GetStreamQueueMapper(), _providerName, _config, redisQueueProvider, _numQueues);
+                adapter = new PhysicalQueues.GenericQueueAdapter(_logger, GetStreamQueueMapper(), _providerName, _config, redisQueueProvider, _numQueues);
             }
             else
-                adapter = new PipeQueueAdapter(_logger, GetStreamQueueMapper(), _providerName);
+            {
+                var memoryQueueProvider = new PhysicalQueues.Memory.MemoryQueueProvider();
+                adapter = new PhysicalQueues.GenericQueueAdapter(_logger, GetStreamQueueMapper(), _providerName, _config, memoryQueueProvider, _numQueues);
+            }
 
             return Task.FromResult<IQueueAdapter>(adapter);
         }

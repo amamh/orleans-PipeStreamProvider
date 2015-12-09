@@ -12,7 +12,7 @@ using Orleans.Streams;
 using StackExchange.Redis;
 using Orleans.Providers;
 
-namespace PipeStreamProvider.PhysicalQueues.Redis
+namespace PipeStreamProvider.PhysicalQueues
 {
     public class GenericQueueAdapter : IQueueAdapter
     {

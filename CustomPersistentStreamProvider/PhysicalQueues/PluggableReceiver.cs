@@ -9,7 +9,7 @@ using Orleans.Runtime;
 using Orleans.Serialization;
 using Orleans.Streams;
 
-namespace PipeStreamProvider.PhysicalQueues.Redis
+namespace PipeStreamProvider.PhysicalQueues
 {
     public class GenericQueueAdapterReceiver : IQueueAdapterReceiver
     {
@@ -36,13 +36,15 @@ namespace PipeStreamProvider.PhysicalQueues.Redis
             var listOfMessages = new List<byte[]>();
 
             var listLength = _queueProvider.Length(Id);
-            var max = Math.Max(maxCount, listLength);
+            var max = Math.Min(maxCount, listLength);
 
             for (var i = 0; i < max; i++)
             {
                 var nextMsg = _queueProvider.Dequeue(Id);
-                if (nextMsg != null) // wth?
+                if (nextMsg != null)
                     listOfMessages.Add(nextMsg);
+                else
+                    _logger.AutoWarn("The queue returned a null message. This shouldn't happen. Ignored.");
             }
 
             var list = (from m in listOfMessages select SerializationManager.DeserializeFromByteArray<PipeQueueAdapterBatchContainer>(m));
