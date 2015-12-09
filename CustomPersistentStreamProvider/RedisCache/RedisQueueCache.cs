@@ -43,10 +43,10 @@ namespace PipeStreamProvider.RedisCache
             if (token != null && !(token is SimpleSequenceToken))
             {
                 // Null token can come from a stream subscriber that is just interested to start consuming from latest (the most recent event added to the cache).
-                throw new ArgumentOutOfRangeException("token", "token must be of type SimpleSequenceToken");
+                throw new ArgumentOutOfRangeException(nameof(token), "token must be of type SimpleSequenceToken");
             }
 
-            return new QueueCacheRedisCursor(_cache, streamNamespace, streamGuid, token as SimpleSequenceToken);
+            return new QueueCacheRedisCursor(_cache, streamNamespace, streamGuid, (SimpleSequenceToken) token);
         }
 
         public bool IsUnderPressure()

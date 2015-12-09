@@ -10,12 +10,11 @@ namespace PipeStreamProvider.RedisCache
 {
     public class QueueCacheRedisCursor : IQueueCacheCursor
     {
-        internal StreamSequenceToken OldestPossibleToken { get; } = new SimpleSequenceToken(0);
+        private StreamSequenceToken OldestPossibleToken { get; } = new SimpleSequenceToken(0);
 
         private readonly RedisCustomList<IBatchContainer> _cache;
         private readonly string _namespace;
         private readonly Guid _stream;
-        private readonly SimpleSequenceToken _startToken;
         private long _index = 0;
 
         public QueueCacheRedisCursor(RedisCustomList<IBatchContainer> cache, string streamNamespace, Guid streamGuid, SimpleSequenceToken token)
@@ -26,8 +25,7 @@ namespace PipeStreamProvider.RedisCache
             _cache = cache;
             _namespace = streamNamespace;
             _stream = streamGuid;
-            _startToken = token;
-            _index = _startToken == null ? 0 : _startToken.SequenceNumber;
+            _index = token?.SequenceNumber ?? 0;
         }
         public IBatchContainer GetCurrent(out Exception exception)
         {

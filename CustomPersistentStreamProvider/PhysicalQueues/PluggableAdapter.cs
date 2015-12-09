@@ -16,8 +16,8 @@ namespace PipeStreamProvider.PhysicalQueues
 {
     public class GenericQueueAdapter : IQueueAdapter
     {
-        private Logger _logger;
-        private IStreamQueueMapper _streamQueueMapper;
+        private readonly Logger _logger;
+        private readonly IStreamQueueMapper _streamQueueMapper;
         private readonly IProviderConfiguration _config;
         private readonly IProviderQueue _queueProvider;
 

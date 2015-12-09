@@ -53,12 +53,15 @@ namespace PipeStreamProvider.PhysicalQueues
                 batchContainer.SimpleSequenceToken = new SimpleSequenceToken(_sequenceId++);
 
             _logger.AutoVerbose($"Read {pipeQueueAdapterBatchContainers.Count} batch containers");
+            // TODO: Is this an expensive call?
             return Task.FromResult<IList<IBatchContainer>>(pipeQueueAdapterBatchContainers.ToList<IBatchContainer>());
         }
 
         public Task MessagesDeliveredAsync(IList<IBatchContainer> messages)
         {
-            var count = messages == null ? 0 : messages.Count;
+            var count = messages?.Count ?? 0;
+            if (count == 0)
+                return TaskDone.Done;
             var lastToken = messages?.Count != 0 ? messages?.Last()?.SequenceToken.ToString() : "--";
             _logger.AutoVerbose($"Delivered {count}, last one has token {lastToken}");
             return TaskDone.Done;

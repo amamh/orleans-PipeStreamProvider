@@ -18,8 +18,13 @@ namespace PipeStreamProvider.RedisCache
 
         public int Size
         {
-            // TODO: Optimise
-            get { return _caches.Select(pair => pair.Value.Size).Sum(); }
+            get
+            {
+                var total = 0;
+                foreach (var cache in _caches)
+                    total += cache.Value.Size;
+                return total;
+            }
         }
 
         public QueueAdapterCacheRedis(Logger logger, IDatabase db)
