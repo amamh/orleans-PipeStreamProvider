@@ -20,7 +20,7 @@ namespace PipeStreamProvider.RedisCache
 
         public QueueCacheRedisCursor(RedisCustomList<IBatchContainer> cache, string streamNamespace, Guid streamGuid, SimpleSequenceToken token)
         {
-            if (token.Older(OldestPossibleToken))
+            if (token != null && token.Older(OldestPossibleToken))
                 throw new QueueCacheMissException($"Can't ask for a token older than SimpleSequenceToken(0). Requested token:\n{token}");
 
             _cache = cache;
