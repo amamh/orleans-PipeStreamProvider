@@ -41,11 +41,13 @@ namespace PipeStreamProvider
         private IQueueAdapterCache _adapterCache;
         private ConnectionMultiplexer _redisConn; // TODO: Dispose
         private IDatabase _redisDb;
+        private IProviderConfiguration _config;
 
         public void Init(IProviderConfiguration config, string providerName, Logger logger)
         {
             _logger = logger;
             _providerName = providerName;
+            _config = config;
 
             // TODO: Do we need this? We want to cache everything, we don't want to trim.
             // Cache size
@@ -123,7 +125,11 @@ namespace PipeStreamProvider
             // In AzureQueueAdapterFactory an adapter is made per call, so we do the same
             IQueueAdapter adapter;
             if (_useRedisForQueue)
-                adapter = new PhysicalQueues.Redis.RedisQueueAdapter(_logger, GetStreamQueueMapper(), _providerName, _server, _databaseNum);
+            {
+                //adapter = new PhysicalQueues.Redis.RedisQueueAdapter(_logger, GetStreamQueueMapper(), _providerName, _server, _databaseNum);
+                var redisQueueProvider = new PhysicalQueues.Redis.RedisQueueProvider();
+                adapter = new PhysicalQueues.Redis.GenericQueueAdapter(_logger, GetStreamQueueMapper(), _providerName, _config, redisQueueProvider, _numQueues);
+            }
             else
                 adapter = new PipeQueueAdapter(_logger, GetStreamQueueMapper(), _providerName);
 

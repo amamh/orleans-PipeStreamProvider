@@ -41,7 +41,8 @@ namespace PipeStreamProvider.PhysicalQueues.Redis
             for (var i = 0; i < max; i++)
             {
                 var nextMsg = _queueProvider.Dequeue(Id);
-                listOfMessages.Add(nextMsg);
+                if (nextMsg != null) // wth?
+                    listOfMessages.Add(nextMsg);
             }
 
             var list = (from m in listOfMessages select SerializationManager.DeserializeFromByteArray<PipeQueueAdapterBatchContainer>(m));

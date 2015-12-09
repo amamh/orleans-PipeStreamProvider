@@ -14,6 +14,6 @@ namespace PipeStreamProvider.PhysicalQueues
         void Init(Logger logger, IProviderConfiguration config, string providerName, int numQueues);
         void Enqueue(QueueId queueId, byte[] batch);
         byte[] Dequeue(QueueId queueId);
-        int Length(QueueId id);
+        long Length(QueueId id);
     }
 }

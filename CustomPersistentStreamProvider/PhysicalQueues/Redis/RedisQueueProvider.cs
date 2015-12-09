@@ -55,9 +55,10 @@ namespace PipeStreamProvider.PhysicalQueues.Redis
             logger.AutoInfo($"connection to Redis successful.");
         }
 
-        public int Length(QueueId id)
+        public long Length(QueueId id)
         {
-            throw new NotImplementedException();
+            var redisListName = GetRedisListName(id);
+            return _database.ListLength(redisListName);
         }
         private void ReadRedisConnectionParams(IProviderConfiguration config)
         {

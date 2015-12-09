@@ -18,15 +18,10 @@ namespace PipeStreamProvider.PhysicalQueues.Redis
     {
         private Logger _logger;
         private IStreamQueueMapper _streamQueueMapper;
-        private ConnectionMultiplexer _connection;
-        //private readonly int _databaseNum;
-        //private readonly string _server;
-        private IDatabase _database;
-        private string _redisListBaseName = "OrleansQueue";
         private readonly IProviderConfiguration _config;
         private readonly IProviderQueue _queueProvider;
 
-        public GenericQueueAdapter(Logger logger, IStreamQueueMapper streamQueueMapper, string name, IProviderConfiguration config, IProviderQueue queueProvider)
+        public GenericQueueAdapter(Logger logger, IStreamQueueMapper streamQueueMapper, string name, IProviderConfiguration config, IProviderQueue queueProvider, int numOfQueues)
         {
             Name = name;
             _config = config;
@@ -34,7 +29,7 @@ namespace PipeStreamProvider.PhysicalQueues.Redis
             _streamQueueMapper = streamQueueMapper;
             _queueProvider = queueProvider;
 
-            queueProvider.Init(_config);
+            queueProvider.Init(_logger, _config, name, numOfQueues);
         }
 
         public Task QueueMessageBatchAsync<T>(Guid streamGuid, string streamNamespace, IEnumerable<T> events, StreamSequenceToken token,
@@ -62,7 +57,7 @@ namespace PipeStreamProvider.PhysicalQueues.Redis
 
         public IQueueAdapterReceiver CreateReceiver(QueueId queueId)
         {
-            return new GenericQueueAdapterReceiver(_logger, queueId, _database, queueId, _queueProvider);
+            return new GenericQueueAdapterReceiver(_logger, queueId, _queueProvider);
         }
 
         public string Name { get; private set; }
