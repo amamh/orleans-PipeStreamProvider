@@ -26,11 +26,12 @@ namespace Producer
             }
 
             var grain = GrainClient.GrainFactory.GetGrain<ISampleDataGrain>(0);
+            var stream = grain.GetStream().Result;
             //var i = 0;
             for (int i = 0; i < 1000; i++)
             {
                 Task.Delay(500).Wait();
-                grain.SetRandomData(i).Wait();
+                stream.OnNextAsync(i);
                 Console.WriteLine($"Writing....: {i}\t\t{DateTime.UtcNow.Millisecond}");
             }
         }
