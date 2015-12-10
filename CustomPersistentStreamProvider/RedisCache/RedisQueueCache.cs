@@ -51,15 +51,14 @@ namespace PipeStreamProvider.RedisCache
 
         public bool IsUnderPressure()
         {
-            // FIXME
+            // TODO: How to detect if Redis is under pressure?
             return false;
         }
 
         public bool TryPurgeFromCache(out IList<IBatchContainer> purgedItems)
         {
-            // FIXME
+            // we don't purge
             purgedItems = null;
-
             return true;
         }
     }
