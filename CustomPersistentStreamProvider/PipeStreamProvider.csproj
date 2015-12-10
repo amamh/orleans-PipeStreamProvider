@@ -54,8 +54,8 @@
   <ItemGroup>
     <Compile Include="PhysicalQueues\IProviderQueue.cs" />
     <Compile Include="PhysicalQueues\Memory\MemoryQueueProvider.cs" />
-    <Compile Include="PhysicalQueues\PluggableAdapter.cs" />
-    <Compile Include="PhysicalQueues\PluggableReceiver.cs" />
+    <Compile Include="PhysicalQueues\GenericQueueAdapter.cs" />
+    <Compile Include="PhysicalQueues\GenericQueueAdapterReceiver.cs" />
     <Compile Include="PhysicalQueues\Redis\RedisQueueProvider.cs" />
     <Compile Include="RedisCache\ICacheList.cs" />
     <Compile Include="LoggerExtensions.cs" />
