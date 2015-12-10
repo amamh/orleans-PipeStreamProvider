@@ -4,9 +4,12 @@
   - The cache can either be in-memory or on Redis. To use Redis for caching, set `UseRedisForCache="true"` in the provider line in server config.  
 
 # Physical Queue
-You can use either Redis as a physical queue (a Redis list internally) or an in-memory queue. The in-memory queue is only good for debugging but it's better not to use it.
-The in-memory queue works fine when running this sample on the same machine with one server. However, this sample is writing from a grain i.e. the writes happen on the server and the reads also since the receiver is created on the server, so this setup works fine with an in-memory queue.
-It's recommended to use Redis as a physical queue, to do that put `UseRedisForQueue="true"` in the server config (it should be there by default).
+Currently, the main physical queue implmentation is using Redis. You can also use an in-memory queue, but that's a bad idea.
+The in-memory queue will only work when writing from within the server (i.e. from a grain). So, if you want to run the Sample
+using the in-memory queue, you have to change the producer so that it sends the data to a grain which then writes to the stream
+instead of writing to the stream directly.
+
+Basically, enable Redis as the physical queue (already enabled in the config).
 
 # Config
 - Cache:
@@ -20,7 +23,8 @@ It's recommended to use Redis as a physical queue, to do that put `UseRedisForQu
 # Sample
 The sample provided will start a producer, wait a few seconds then start a consumer which will ask for the stream to replayed since the start. That last part is done by`await stream.SubscribeAsync(this, new SimpleSequenceToken(0));` i.e. by asking for event sequence token 0 which will always be the first message received on the stream.
 
-The config is setup so that the server will use Redis for caching with the default connection parameters assuming Redis is running on the local machine.
+The config is setup so that the server will use Redis for caching and as a physical queue.
+It uses the default connection parameters assuming Redis is running on the local machine.
 
 # Future
 - Make the physical queues pluggable as external libraries.
