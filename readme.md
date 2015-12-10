@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/ip5irt07j6hr7b6v?svg=true)](https://ci.appveyor.com/project/amamh/orleans-pipestreamprovider)
+
 # Summary
 - An example of a PersistentStreamProvider with a custom adapter.
 - A way to implement **replayable streams** using a custom IQueueCache i.e. the client can ask to replay past events.
