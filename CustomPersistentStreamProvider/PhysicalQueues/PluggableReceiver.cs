@@ -21,6 +21,7 @@ namespace PipeStreamProvider.PhysicalQueues
         public GenericQueueAdapterReceiver(Logger logger, QueueId queueid, IProviderQueue queueProvider)
         {
             _queueProvider = queueProvider;
+
             _logger = logger;
 
             Id = queueid;
@@ -31,16 +32,16 @@ namespace PipeStreamProvider.PhysicalQueues
             return TaskDone.Done;
         }
 
-        public Task<IList<IBatchContainer>> GetQueueMessagesAsync(int maxCount)
+        public async Task<IList<IBatchContainer>> GetQueueMessagesAsync(int maxCount)
         {
             var listOfMessages = new List<byte[]>();
 
-            var listLength = _queueProvider.Length(Id);
+            var listLength = await _queueProvider.Length(Id);
             var max = Math.Min(maxCount, listLength);
 
             for (var i = 0; i < max; i++)
             {
-                var nextMsg = _queueProvider.Dequeue(Id);
+                var nextMsg = await _queueProvider.Dequeue(Id);
                 if (nextMsg != null)
                     listOfMessages.Add(nextMsg);
                 else
@@ -54,7 +55,7 @@ namespace PipeStreamProvider.PhysicalQueues
 
             _logger.AutoVerbose($"Read {pipeQueueAdapterBatchContainers.Count} batch containers");
             // TODO: Is this an expensive call?
-            return Task.FromResult<IList<IBatchContainer>>(pipeQueueAdapterBatchContainers.ToList<IBatchContainer>());
+            return pipeQueueAdapterBatchContainers.ToList<IBatchContainer>();
         }
 
         public Task MessagesDeliveredAsync(IList<IBatchContainer> messages)

@@ -20,6 +20,8 @@ namespace PipeStreamProvider.PhysicalQueues
         private readonly IStreamQueueMapper _streamQueueMapper;
         private readonly IProviderConfiguration _config;
         private readonly IProviderQueue _queueProvider;
+        private readonly string _providerName;
+        private readonly int _numOfQueues;
 
         public GenericQueueAdapter(Logger logger, IStreamQueueMapper streamQueueMapper, string providerName, IProviderConfiguration config, IProviderQueue queueProvider, int numOfQueues)
         {
@@ -28,14 +30,18 @@ namespace PipeStreamProvider.PhysicalQueues
             _logger = logger;
             _streamQueueMapper = streamQueueMapper;
             _queueProvider = queueProvider;
-
-            queueProvider.Init(_logger, _config, providerName, numOfQueues);
+            _providerName = providerName;
+            _numOfQueues = numOfQueues;
         }
 
-        public Task QueueMessageBatchAsync<T>(Guid streamGuid, string streamNamespace, IEnumerable<T> events, StreamSequenceToken token,
+        public Task Init()
+        {
+            return _queueProvider.Init(_logger, _config, _providerName, _numOfQueues);
+        }
+
+        public async Task QueueMessageBatchAsync<T>(Guid streamGuid, string streamNamespace, IEnumerable<T> events, StreamSequenceToken token,
             Dictionary<string, object> requestContext)
         {
-
             if (events == null)
             {
                 throw new ArgumentNullException(nameof(events), "Trying to QueueMessageBatchAsync null data.");
@@ -49,15 +55,12 @@ namespace PipeStreamProvider.PhysicalQueues
 
             var bytes = SerializationManager.SerializeToByteArray(container);
 
-            _queueProvider.Enqueue(queueId, bytes);
-
-            return TaskDone.Done;
+            await _queueProvider.Enqueue(queueId, bytes);
         }
-
-
+        
         public IQueueAdapterReceiver CreateReceiver(QueueId queueId)
         {
-            return new GenericQueueAdapterReceiver(_logger, queueId, _queueProvider);
+            return new GenericQueueAdapterReceiver( _logger, queueId, _queueProvider);
         }
 
         public string Name { get; }

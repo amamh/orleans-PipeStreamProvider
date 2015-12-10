@@ -11,9 +11,10 @@ namespace PipeStreamProvider.PhysicalQueues
 {
     public interface IProviderQueue
     {
-        void Init(Logger logger, IProviderConfiguration config, string providerName, int numQueues);
-        void Enqueue(QueueId queueId, byte[] batch);
-        byte[] Dequeue(QueueId queueId);
-        long Length(QueueId id);
+        bool IsInitialised { get; }
+        Task Init(Logger logger, IProviderConfiguration config, string providerName, int numQueues);
+        Task Enqueue(QueueId queueId, byte[] batch);
+        Task<byte[]> Dequeue(QueueId queueId);
+        Task<long> Length(QueueId id);
     }
 }

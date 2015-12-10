@@ -120,7 +120,7 @@ namespace PipeStreamProvider
             }
         }
 
-        public Task<IQueueAdapter> CreateAdapter()
+        public async Task<IQueueAdapter> CreateAdapter()
         {
             // In AzureQueueAdapterFactory an adapter is made per call, so we do the same
             IQueueAdapter adapter;
@@ -128,7 +128,9 @@ namespace PipeStreamProvider
             {
                 //adapter = new PhysicalQueues.Redis.RedisQueueAdapter(_logger, GetStreamQueueMapper(), _providerName, _server, _databaseNum);
                 var redisQueueProvider = new PhysicalQueues.Redis.RedisQueueProvider();
-                adapter = new PhysicalQueues.GenericQueueAdapter(_logger, GetStreamQueueMapper(), _providerName, _config, redisQueueProvider, _numQueues);
+                var redisAdapter = new PhysicalQueues.GenericQueueAdapter(_logger, GetStreamQueueMapper(), _providerName, _config, redisQueueProvider, _numQueues);
+                await redisAdapter.Init();
+                adapter = redisAdapter;
             }
             else
             {
@@ -136,7 +138,7 @@ namespace PipeStreamProvider
                 adapter = new PhysicalQueues.GenericQueueAdapter(_logger, GetStreamQueueMapper(), _providerName, _config, memoryQueueProvider, _numQueues);
             }
 
-            return Task.FromResult<IQueueAdapter>(adapter);
+            return adapter;
         }
 
         public IQueueAdapterCache GetQueueAdapterCache()
