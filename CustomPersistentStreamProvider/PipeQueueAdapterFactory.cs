@@ -42,12 +42,14 @@ namespace PipeStreamProvider
         private ConnectionMultiplexer _redisConn; // TODO: Dispose
         private IDatabase _redisDb;
         private IProviderConfiguration _config;
+        private IServiceProvider _serviceProvider;
 
-        public void Init(IProviderConfiguration config, string providerName, Logger logger)
+        public void Init(IProviderConfiguration config, string providerName, Logger logger, IServiceProvider serviceProvider)
         {
             _logger = logger;
             _providerName = providerName;
             _config = config;
+            _serviceProvider = serviceProvider;
 
             // TODO: Do we need this? We want to cache everything, we don't want to trim.
             // Cache size

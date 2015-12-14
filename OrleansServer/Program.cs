@@ -24,6 +24,7 @@ namespace OrleansServer
         {
             var wrapper = new OrleansHostWrapper(args);
             wrapper.Run();
+            Console.ReadLine();
         }
     }
 }

@@ -2,21 +2,24 @@
 <OrleansConfiguration xmlns="urn:orleans">
   <Globals>
     <StorageProviders>
+      <Provider Type="Orleans.Storage.MemoryStorage" Name="PubSubStore" NumStorageGrains="1"/>
       <Provider Type="Orleans.Storage.MemoryStorage" Name="MemoryStore" />
-      <Provider Type="Orleans.Storage.MemoryStorage" Name="PubSubStore" />
     </StorageProviders>
     <StreamProviders>
-      <Provider Type="Orleans.Providers.Streams.SimpleMessageStream.SimpleMessageStreamProvider" Name="SMSProvider"/>
+      <Provider Type="Orleans.Providers.Streams.SimpleMessageStream.SimpleMessageStreamProvider" Name="SMSProvider" FireAndForgetDelivery="false"/>
       <Provider Type="PipeStreamProvider.PipeStreamProvider" Name="PSProvider" NumQueues="2" UseRedisForCache="true" UseRedisForQueue="true"/>
     </StreamProviders>
-    <SeedNode Address="localhost" Port="11111" />
+    <SeedNode Address="localhost" Port="11111"/>
+    <Messaging ResponseTimeout="30s"/>
   </Globals>
   <Defaults>
-    <Networking Address="localhost" Port="11111" />
+    <Networking Address="localhost" Port="11111"/>
     <ProxyingGateway Address="localhost" Port="30000" />
-    <Tracing DefaultTraceLevel="Info" TraceToConsole="true" TraceToFile="{0}-{1}.log">
-      <TraceLevelOverride LogPrefix="Application" TraceLevel="Verbose" />
+    <Tracing DefaultTraceLevel="Info" TraceToConsole="true" TraceToFile="{0}-{1}.log" PropagateActivityId="false" BulkMessageLimit="1000">
+      <TraceLevelOverride LogPrefix="Application" TraceLevel="Info" />
     </Tracing>
-    <Statistics MetricsTableWriteInterval="30s" PerfCounterWriteInterval="30s" LogWriteInterval="300s" WriteLogStatisticsToTable="true"/>
+    <Statistics MetricsTableWriteInterval="30s" PerfCounterWriteInterval="30s" LogWriteInterval="300s" WriteLogStatisticsToTable="true" StatisticsCollectionLevel="Info"/>
   </Defaults>
 </OrleansConfiguration>
+
+
