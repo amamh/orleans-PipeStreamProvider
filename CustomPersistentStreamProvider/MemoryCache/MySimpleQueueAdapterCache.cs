@@ -9,23 +9,19 @@ namespace PipeStreamProvider.MemoryCache
 {
     class MySimpleQueueAdapterCache : IQueueAdapterCache
     {
-        private readonly int _cacheSize;
         private readonly Logger _logger;
         private readonly ConcurrentDictionary<QueueId, IQueueCache> _caches;
 
 
-        public MySimpleQueueAdapterCache(IQueueAdapterFactory factory, int cacheSize, Logger logger)
+        public MySimpleQueueAdapterCache(IQueueAdapterFactory factory, Logger logger)
         {
-            if (cacheSize <= 0)
-                throw new ArgumentOutOfRangeException(nameof(cacheSize), "CacheSize must be a positive number.");
-            this._cacheSize = cacheSize;
             this._logger = logger;
             _caches = new ConcurrentDictionary<QueueId, IQueueCache>();
         }
 
         public IQueueCache CreateQueueCache(QueueId queueId)
         {
-            return _caches.AddOrUpdate(queueId, (id) => new MySimpleQueueCache(id, _cacheSize, _logger), (id, queueCache) => queueCache);
+            return _caches.AddOrUpdate(queueId, (id) => new QueueCache(id, _logger), (id, queueCache) => queueCache);
         }
 
         public int Size

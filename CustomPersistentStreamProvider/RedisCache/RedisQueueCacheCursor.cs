@@ -44,13 +44,13 @@ namespace PipeStreamProvider.RedisCache
 
         public bool MoveNext()
         {
-            IBatchContainer next;
+            IBatchContainer newBatch;
             while (_index < _cache.Count)
             {
                 _index++;
-                next = _cache.Get(_index); // TODO: we will do this retrieval again laster in GetCurrent, maybe we can cache it
+                newBatch = _cache.Get(_index); // TODO: we will do this retrieval again laster in GetCurrent, maybe we can cache it
 
-                if (next?.StreamNamespace == _namespace && next?.StreamGuid == _stream)
+                if (newBatch?.StreamNamespace == _namespace && newBatch?.StreamGuid == _stream)
                     return true;
             }
             return false;

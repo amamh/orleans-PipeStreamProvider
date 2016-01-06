@@ -10,9 +10,9 @@ namespace PipeStreamProvider
 {
     public class PipeQueueAdapterFactory : IQueueAdapterFactory
     {
-        private const string CacheSizeParam = "CacheSize";
-        private const int DefaultCacheSize = 4096;
-        private int _cacheSize;
+        //private const string CacheSizeParam = "CacheSize";
+        //private const int DefaultCacheSize = 4096;
+        //private int _cacheSize;
 
         private const string NumQueuesParam = "NumQueues";
         private const int DefaultNumQueues = 8; // keep as power of 2.
@@ -51,15 +51,14 @@ namespace PipeStreamProvider
             _config = config;
             _serviceProvider = serviceProvider;
 
-            // TODO: Do we need this? We want to cache everything, we don't want to trim.
             // Cache size
-            string cacheSizeString;
-            _cacheSize = DefaultCacheSize;
-            if (config.Properties.TryGetValue(CacheSizeParam, out cacheSizeString))
-            {
-                if (!int.TryParse(cacheSizeString, out _cacheSize))
-                    throw new ArgumentException($"{CacheSizeParam} invalid.  Must be int");
-            }
+            //string cacheSizeString;
+            //_cacheSize = DefaultCacheSize;
+            //if (config.Properties.TryGetValue(CacheSizeParam, out cacheSizeString))
+            //{
+            //    if (!int.TryParse(cacheSizeString, out _cacheSize))
+            //        throw new ArgumentException($"{CacheSizeParam} invalid.  Must be int");
+            //}
 
             // # queues
             string numQueuesString;
@@ -151,7 +150,7 @@ namespace PipeStreamProvider
                 return _adapterCache ?? (_adapterCache = new RedisCache.QueueAdapterCacheRedis(_logger, _redisDb));
             }
 
-            return _adapterCache ?? (_adapterCache = new MemoryCache.MySimpleQueueAdapterCache(this, _cacheSize, _logger));
+            return _adapterCache ?? (_adapterCache = new MemoryCache.MySimpleQueueAdapterCache(this, _logger));
         }
 
         public IStreamQueueMapper GetStreamQueueMapper()

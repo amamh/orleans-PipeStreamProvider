@@ -3,112 +3,119 @@ using System.Collections.Generic;
 using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
 using Orleans.Streams;
+using System.Diagnostics;
 
 // TODO: Scrap this and do it from scratch without all this complexity
 namespace PipeStreamProvider.MemoryCache
 {
-    public class MySimpleQueueCacheCursor : IQueueCacheCursor
+    public class QueueCacheCursor : IQueueCacheCursor
     {
-        private readonly Guid _streamGuid;
-        private readonly string _streamNamespace;
-        private readonly MySimpleQueueCache _cache;
-        private readonly Logger _logger;
-        private IBatchContainer _current; // this is a pointer to the current element in the cache. It is what will be returned by GetCurrent().
+        private StreamSequenceToken OldestPossibleToken { get; } = new SimpleSequenceToken(0);
 
-        // This is a pointer to the NEXT element in the cache.
-        // After the cursor is first created it should be called MoveNext before the call to GetCurrent().
-        // After MoveNext returns, the current points to the current element that will be returned by GetCurrent()
-        // and Element will point to the next element (since MoveNext actualy advanced it to the next).
-        internal LinkedListNode<SimpleQueueCacheItem> Element { get; private set; }
-        internal StreamSequenceToken SequenceToken { get; private set; }
+        private readonly LinkedList<IBatchContainer> _cache;
+        private readonly string _namespace;
+        private readonly Guid _stream;
+        private StreamSequenceToken _requestedToken;
+        private LinkedListNode<IBatchContainer> _current;
 
-        internal bool IsSet => Element != null;
-
-        internal void Reset(StreamSequenceToken token)
+        public QueueCacheCursor(LinkedList<IBatchContainer> cache, string streamNamespace, Guid streamGuid, SimpleSequenceToken token, Logger logger)
         {
-            Element = null;
-            SequenceToken = token;
+            if (token != null && token.Older(OldestPossibleToken))
+                throw new QueueCacheMissException($"Can't ask for a token older than SimpleSequenceToken(0). Requested token:\n{token}");
+
+            _cache = cache;
+            _namespace = streamNamespace;
+            _stream = streamGuid;
+            _requestedToken = token ?? OldestPossibleToken;
+            _logger = logger;
+            _current = _cache.First;
         }
-
-        internal void Set(LinkedListNode<SimpleQueueCacheItem> item)
+        public IBatchContainer GetCurrent(out Exception exception)
         {
-            Element = item;
-            SequenceToken = item.Value.SequenceToken;
-        }
-
-        public MySimpleQueueCacheCursor(MySimpleQueueCache cache, Guid streamGuid, string streamNamespace, Logger logger)
-        {
-            if (cache == null)
+            try
             {
-                throw new ArgumentNullException(nameof(cache));
+                exception = null;
+                return _current.Value;
             }
-            this._cache = cache;
-            this._streamGuid = streamGuid;
-            this._streamNamespace = streamNamespace;
-            this._logger = logger;
-            _current = null;
-            MySimpleQueueCache.Log(logger, "SimpleQueueCacheCursor New Cursor for {0}, {1}", streamGuid, streamNamespace);
-        }
-
-        public virtual IBatchContainer GetCurrent(out Exception exception)
-        {
-            MySimpleQueueCache.Log(_logger, "SimpleQueueCacheCursor.GetCurrent: {0}", _current);
-
-            exception = null;
-            return _current;
-        }
-
-        public virtual bool MoveNext()
-        {
-            IBatchContainer next;
-            while (_cache.TryGetNextMessage(this, out next))
+            catch (Exception ex)
             {
-                if (IsInStream(next))
-                    break;
-            }
-            if (!IsInStream(next))
-                return false;
-
-            _current = next;
-            return true;
-        }
-
-        public virtual void Refresh()
-        {
-            if (!IsSet)
-            {
-                _cache.InitializeCursor(this, SequenceToken);
+                exception = ex;
+                throw;
             }
         }
 
-        private bool IsInStream(IBatchContainer batchContainer)
+        public bool MoveNext()
         {
-            return batchContainer != null &&
-                    batchContainer.StreamGuid.Equals(_streamGuid) &&
-                    string.Equals(batchContainer.StreamNamespace, _streamNamespace);
+            if (_current == null)
+            {
+                if (_cache.First != null)
+                {
+                    _current = _cache.First;
+                    return true;
+                }
+                else
+                    return false;
+            }
+
+            var next = _current.Next;
+            while (true)
+            {
+                if (next == null) // end?
+                    return false;
+
+                // Find batch with the same token, no this namespace and for this stream
+                if (
+                    next.Value?.StreamNamespace == _namespace
+                    && next.Value?.StreamGuid == _stream
+                    )
+                {
+                    _current = next;
+                    return true;
+                }
+
+                next = next.Next;
+            }
         }
 
-        #region IDisposable Members
-
-        public void Dispose()
+        public void Refresh()
         {
-            Dispose(true);
+            // nothing to do here
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+        private Logger _logger;
 
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
+            if (!disposedValue)
             {
-                _cache.ResetCursor(this, null);
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects).
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+
+                disposedValue = true;
             }
         }
 
-        #endregion
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        // ~QueueCacheRedisCursor() {
+        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+        //   Dispose(false);
+        // }
 
-        public override string ToString()
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
         {
-            return
-                $"<SimpleQueueCacheCursor: Element={(Element != null ? Element.Value.Batch.ToString() : "null")}, SequenceToken={(SequenceToken != null ? SequenceToken.ToString() : "null")}>";
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            // GC.SuppressFinalize(this);
         }
+        #endregion
     }
 }
