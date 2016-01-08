@@ -28,13 +28,14 @@ namespace PipeStreamProvider.MemoryCache
             _stream = streamGuid;
             _requestedToken = token ?? OldestPossibleToken;
             _logger = logger;
-            _current = _cache.First;
+            _current = null;
         }
         public IBatchContainer GetCurrent(out Exception exception)
         {
             try
             {
                 exception = null;
+                _logger.AutoVerbose($"Returning {_current?.Value}, with token {_current?.Value.SequenceToken}");
                 return _current.Value;
             }
             catch (Exception ex)
@@ -46,34 +47,62 @@ namespace PipeStreamProvider.MemoryCache
 
         public bool MoveNext()
         {
-            if (_current == null)
+            try
             {
-                if (_cache.First != null)
+                // if this is the first time
+                if (_current == null)
                 {
-                    _current = _cache.First;
-                    return true;
+                    _logger.AutoVerbose("_current is null, must be first time calling MoveNext or cache is empty");
+                    _logger.AutoVerbose($"_cache is null: {_cache == null} , and has {_cache?.Count} messages");
+                    if (_cache.First != null)
+                    {
+                        _logger.AutoVerbose("Setting _current to first message in cache");
+                        _current = _cache.First;
+                        _logger.AutoVerbose("set _current to first message in cache");
+
+                        if (_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream)
+                        {
+                            _logger.AutoVerbose("first message in cache is for this stream, successfully moved to next. Returning true");
+                            return true;
+                        }
+                        else
+                        {
+                            _logger.AutoVerbose($"First message is NOT for this stream. This stream: {_namespace}-{_stream}, first message is for stream: {_current.Value?.StreamNamespace}-{_current.Value?.StreamGuid}");
+                        }
+                    }
+                    else
+                    {
+                        _logger.AutoVerbose("Cache is empty");
+                        return false;
+                    }
                 }
-                else
-                    return false;
+
+                while (true)
+                {
+                    if (_current.Next == null) // end?
+                    {
+                        _logger.AutoVerbose("no next, returning false");
+                        return false;
+                    }
+
+                    _logger.AutoVerbose("advancing to next");
+                    _current = _current.Next;
+                    _logger.AutoVerbose("advanced to next");
+                    // Find batch with the same token, no this namespace and for this stream
+                    if (_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream)
+                    {
+                        _logger.AutoVerbose("this message is for this stream, returning true");
+                        return true;
+                    }
+                    else {
+                        _logger.AutoVerbose($"this message is NOT for this stream. This stream: {_namespace}-{_stream}, this message is for stream: {_current.Value?.StreamNamespace}-{_current.Value?.StreamGuid}");
+                    }
+                }
             }
-
-            var next = _current.Next;
-            while (true)
+            catch (Exception ex)
             {
-                if (next == null) // end?
-                    return false;
-
-                // Find batch with the same token, no this namespace and for this stream
-                if (
-                    next.Value?.StreamNamespace == _namespace
-                    && next.Value?.StreamGuid == _stream
-                    )
-                {
-                    _current = next;
-                    return true;
-                }
-
-                next = next.Next;
+                _logger.AutoError($"{ex}");
+                return false;
             }
         }
 
