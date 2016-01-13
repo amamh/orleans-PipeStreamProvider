@@ -30,7 +30,7 @@ namespace Producer
 
         static void WriteSome()
         {
-            var grain = GrainClient.GrainFactory.GetGrain<ISampleDataGrain>(0);
+            var grain = GrainClient.GrainFactory.GetGrain<IDataGrain>(0);
             var stream = grain.GetStream().Result;
             //var i = 0;
             for (int i = 0; i < 1000; i++)

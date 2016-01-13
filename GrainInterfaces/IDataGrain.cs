@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Orleans;
@@ -7,7 +7,7 @@ using Orleans.Streams;
 
 namespace GrainInterfaces
 {
-    public interface ISampleDataGrain : IGrainWithIntegerKey
+    public interface IDataGrain : IGrainWithIntegerKey
     {
         Task SetRandomData(int random);
         Task<IAsyncStream<int>> GetStream();

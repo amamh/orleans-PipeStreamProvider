@@ -31,4 +31,3 @@ It uses the default connection parameters assuming Redis is running on the local
 # Future
 - Separate Redis connection parameters in the config for the cache and the physical queue. They shouldn't be assumed to be using the same Redis server.
 - Make the physical queues pluggable as external libraries.
-- Clean up the memory cache to be simple and similar to the Redis one. It's currently very complicated because it was originally based on the implementation of one of the Azure streams.

@@ -10,12 +10,12 @@ namespace GrainCollections
     /// <summary>
     /// Grain implementation class Grain1.
     /// </summary>
-    public class TestObserver : Orleans.Grain, ITestObserver
+    public class TestObserver : Orleans.Grain, IObserverGrain
     {
         private StreamSubscriptionHandle<int> _handler;
         public async Task Subscribe()
         {
-            var ccGrain = GrainFactory.GetGrain<ISampleDataGrain>(0);
+            var ccGrain = GrainFactory.GetGrain<IDataGrain>(0);
             //var stream = await ccGrain.GetStream();
             //_handler = await stream.SubscribeAsync(this, new SimpleSequenceToken(0));
 

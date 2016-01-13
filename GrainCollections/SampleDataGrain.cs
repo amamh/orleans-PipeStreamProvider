@@ -9,7 +9,7 @@ using Orleans.Streams;
 
 namespace GrainCollections
 {
-    public class SampleDataGrain : Orleans.Grain, ISampleDataGrain
+    public class SampleDataGrain : Orleans.Grain, IDataGrain
     {
         private Guid _streamGuid;
         private IAsyncStream<int> _stream;

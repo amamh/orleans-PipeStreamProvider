@@ -11,14 +11,14 @@ namespace Client
     {
         public async Task Subscribe1()
         {
-            var ccGrain = GrainClient.GrainFactory.GetGrain<ISampleDataGrain>(0);
+            var ccGrain = GrainClient.GrainFactory.GetGrain<IDataGrain>(0);
             var stream = await ccGrain.GetStream();
             await stream.SubscribeAsync(this, new PipeStreamProvider.SimpleSequenceToken(0));
         }
 
         public async Task Subscribe2()
         {
-            var ccGrain = GrainClient.GrainFactory.GetGrain<ISampleDataGrain>(0);
+            var ccGrain = GrainClient.GrainFactory.GetGrain<IDataGrain>(0);
             //var stream = await ccGrain.GetStream();
 
             var details = await ccGrain.GetStreamDetails();

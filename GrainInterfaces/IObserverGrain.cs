@@ -7,7 +7,7 @@ namespace GrainInterfaces
     /// <summary>
     /// Orleans grain communication interface ITestObserver
     /// </summary>
-    public interface ITestObserver : Orleans.IGrainWithIntegerKey, IAsyncObserver<int>
+    public interface IObserverGrain : Orleans.IGrainWithIntegerKey, IAsyncObserver<int>
     {
         Task Subscribe();
     }
