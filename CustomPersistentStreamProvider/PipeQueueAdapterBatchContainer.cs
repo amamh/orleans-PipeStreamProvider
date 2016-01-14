@@ -14,26 +14,28 @@ namespace PipeStreamProvider
         private readonly Dictionary<string, object> _requestContext;
         private readonly List<object> _events;
 
-        public SimpleSequenceToken SimpleSequenceToken { get; set; }
+        public TimeSequenceToken RealToken { get; }
 
         public Guid StreamGuid { get; }
         public string StreamNamespace { get; }
 
-        public StreamSequenceToken SequenceToken => SimpleSequenceToken;
+        public StreamSequenceToken SequenceToken => RealToken;
 
-        public PipeQueueAdapterBatchContainer(Guid streamGuid, string streamNamespace, List<object> events, Dictionary<string, object> requestContext)
+        public PipeQueueAdapterBatchContainer(Guid streamGuid, string streamNamespace, List<object> events, TimeSequenceToken token, Dictionary<string, object> requestContext)
         {
             if (events == null)
                 throw new ArgumentNullException(nameof(events), "Message contains no events");
             StreamGuid = streamGuid;
             StreamNamespace = streamNamespace;
+            RealToken = token;
             _events = events;
             _requestContext = requestContext;
         }
 
         public IEnumerable<Tuple<T, StreamSequenceToken>> GetEvents<T>()
         {
-            return _events.OfType<T>().Select((e, i) => Tuple.Create(e, (StreamSequenceToken)SimpleSequenceToken.CreateSequenceTokenForEvent(i)));
+            // TODO: optimise this
+            return _events.OfType<T>().Select((e, i) => Tuple.Create(e, (StreamSequenceToken)RealToken.CreateSequenceTokenForEvent(i)));
         }
 
         public bool ImportRequestContext()

@@ -29,6 +29,7 @@ namespace PipeStreamProvider.PhysicalQueues.Redis
         public async Task Init(Logger logger, IProviderConfiguration config, string providerName, int numQueues)
         {
             _logger = logger;
+            // FIXME: Create a unique name
             _redisListBaseName = $"orleans-{providerName}-queue";
             ReadRedisConnectionParams(config);
             _connection = await ConnectionMultiplexer.ConnectAsync(_server);

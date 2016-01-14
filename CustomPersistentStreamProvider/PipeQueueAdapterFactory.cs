@@ -51,6 +51,7 @@ namespace PipeStreamProvider
             _config = config;
             _serviceProvider = serviceProvider;
 
+            // TODO: Read time to keep messages in cache
             // Cache size
             //string cacheSizeString;
             //_cacheSize = DefaultCacheSize;
@@ -87,12 +88,8 @@ namespace PipeStreamProvider
                     throw new ArgumentException($"{UseRedisForQueueParam} invalid value {useRedis}");
             }
 
-            if (_useRedisForCache)
+            if (_useRedisForQueue)
                 ReadRedisConnectionParams(config);
-
-            //if (_useRedisForQueue)
-            //    // this will be a duplicate step if we are using redis for cache, but it's better to separate the logic
-            //    ReadRedisConnectionParams(config);
 
             _streamQueueMapper = new HashRingBasedStreamQueueMapper(_numQueues, providerName);
         }
@@ -144,13 +141,8 @@ namespace PipeStreamProvider
 
         public IQueueAdapterCache GetQueueAdapterCache()
         {
-            if (_useRedisForCache)
-            {
-                MakeSureRedisConnected();
-                return _adapterCache ?? (_adapterCache = new RedisCache.QueueAdapterCacheRedis(_logger, _redisDb));
-            }
-
-            return _adapterCache ?? (_adapterCache = new MemoryCache.MySimpleQueueAdapterCache(this, _logger));
+            // TODO: Read time span from config
+            return _adapterCache ?? (_adapterCache = new Cache.MySimpleQueueAdapterCache(this, TimeSpan.FromSeconds(30), _logger));
         }
 
         public IStreamQueueMapper GetStreamQueueMapper()

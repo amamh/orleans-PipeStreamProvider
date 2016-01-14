@@ -5,28 +5,29 @@ using Orleans.Runtime;
 using Orleans.Streams;
 using System.Diagnostics;
 
-// TODO: Scrap this and do it from scratch without all this complexity
-namespace PipeStreamProvider.MemoryCache
+// TODO: Remove unnecessary logging
+namespace PipeStreamProvider.Cache
 {
     public class QueueCacheCursor : IQueueCacheCursor
     {
-        private StreamSequenceToken OldestPossibleToken { get; } = new SimpleSequenceToken(0);
+        //private TimeSequenceToken OldestPossibleToken { get; } = new SimpleSequenceToken(0);
 
-        private readonly LinkedList<IBatchContainer> _cache;
+        private readonly LinkedList<PipeQueueAdapterBatchContainer> _cache;
         private readonly string _namespace;
         private readonly Guid _stream;
-        private StreamSequenceToken _requestedToken;
-        private LinkedListNode<IBatchContainer> _current;
+        private TimeSequenceToken _requestedToken;
+        private LinkedListNode<PipeQueueAdapterBatchContainer> _current;
+        private bool _firstTime = true;
 
-        public QueueCacheCursor(LinkedList<IBatchContainer> cache, string streamNamespace, Guid streamGuid, SimpleSequenceToken token, Logger logger)
+        public QueueCacheCursor(LinkedList<PipeQueueAdapterBatchContainer> cache, string streamNamespace, Guid streamGuid, TimeSequenceToken token, Logger logger)
         {
-            if (token != null && token.Older(OldestPossibleToken))
-                throw new QueueCacheMissException($"Can't ask for a token older than SimpleSequenceToken(0). Requested token:\n{token}");
+            //if (token != null && token.Older(OldestPossibleToken))
+            //    throw new QueueCacheMissException($"Can't ask for a token older than SimpleSequenceToken(0). Requested token:\n{token}");
 
             _cache = cache;
             _namespace = streamNamespace;
             _stream = streamGuid;
-            _requestedToken = token ?? OldestPossibleToken;
+            _requestedToken = token ?? new TimeSequenceToken(DateTime.UtcNow);
             _logger = logger;
             _current = null;
         }
@@ -47,6 +48,10 @@ namespace PipeStreamProvider.MemoryCache
 
         public bool MoveNext()
         {
+            // Client is asking for a token that we haven't received yet?
+            if (_requestedToken != null && _cache.Last != null && _requestedToken.Newer(_cache.Last.Value.RealToken))
+                return false;
+
             try
             {
                 // if this is the first time
@@ -60,14 +65,21 @@ namespace PipeStreamProvider.MemoryCache
                         _current = _cache.First;
                         _logger.AutoVerbose("set _current to first message in cache");
 
-                        if (_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream)
+                        // fast-forward based on requested token:
+                        while (_current.Value.RealToken.Older(_requestedToken) == true)
                         {
-                            _logger.AutoVerbose("first message in cache is for this stream, successfully moved to next. Returning true");
-                            return true;
+                            if (_current.Next == null) // nothing more to fast forward
+                                return false;
+
+                            _current = _current.Next;
                         }
-                        else
+
+                        if (
+                            _current.Value?.StreamNamespace == _namespace
+                            && _current.Value?.StreamGuid == _stream
+                            )
                         {
-                            _logger.AutoVerbose($"First message is NOT for this stream. This stream: {_namespace}-{_stream}, first message is for stream: {_current.Value?.StreamNamespace}-{_current.Value?.StreamGuid}");
+                            return true;
                         }
                     }
                     else
@@ -75,6 +87,15 @@ namespace PipeStreamProvider.MemoryCache
                         _logger.AutoVerbose("Cache is empty");
                         return false;
                     }
+                }
+
+                // check if we need to fast-forward
+                while (_current.Value.RealToken.Older(_requestedToken) == true)
+                {
+                    if (_current.Next == null) // nothing more to fast-forward
+                        return false;
+
+                    _current = _current.Next;
                 }
 
                 while (true)

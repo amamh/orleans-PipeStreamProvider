@@ -9,43 +9,32 @@ namespace Client
 {
     public class TestObserver : IAsyncObserver<int>
     {
-        public async Task Subscribe1()
+        public async Task Subscribe(bool recoverToday = false)
         {
-            var ccGrain = GrainClient.GrainFactory.GetGrain<IDataGrain>(0);
-            var stream = await ccGrain.GetStream();
-            await stream.SubscribeAsync(this, new PipeStreamProvider.SimpleSequenceToken(0));
-        }
-
-        public async Task Subscribe2()
-        {
-            var ccGrain = GrainClient.GrainFactory.GetGrain<IDataGrain>(0);
-            //var stream = await ccGrain.GetStream();
-
-            var details = await ccGrain.GetStreamDetails();
-            var providerName = details.Item1;
-            var nameSpace = details.Item2;
-            var guid = details.Item3;
+            var providerName = "PSProvider";
+            var streamId = new Guid("00000000-0000-0000-0000-000000000000");
 
             var provider = GrainClient.GetStreamProvider(providerName);
-            var stream = provider.GetStream<int>(guid, nameSpace);
-
-            await stream.SubscribeAsync(this, new PipeStreamProvider.SimpleSequenceToken(0));
+            var stream = provider.GetStream<int>(streamId, "GlobalNamespace");
+            await stream.SubscribeAsync(this, recoverToday ? new PipeStreamProvider.TimeSequenceToken(DateTime.Today) : null);
         }
 
         public Task OnNextAsync(int item, StreamSequenceToken token = null)
         {
-            Console.WriteLine($"{item}\t\t{DateTime.UtcNow.Millisecond}");
+            Console.WriteLine($"{item}");
             return TaskDone.Done;
         }
 
         public Task OnCompletedAsync()
         {
-            throw new NotImplementedException();
+            Console.WriteLine("Done");
+            return TaskDone.Done;
         }
 
         public Task OnErrorAsync(Exception ex)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(ex);
+            return TaskDone.Done;
         }
     }
 }

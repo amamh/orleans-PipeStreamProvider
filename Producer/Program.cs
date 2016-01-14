@@ -25,13 +25,16 @@ namespace Producer
                 }
             }
 
-            WriteALot();
+            WriteSome();
         }
 
         static void WriteSome()
         {
-            var grain = GrainClient.GrainFactory.GetGrain<IDataGrain>(0);
-            var stream = grain.GetStream().Result;
+            var providerName = "PSProvider";
+            var streamId = new Guid("00000000-0000-0000-0000-000000000000");
+
+            var provider = GrainClient.GetStreamProvider(providerName);
+            var stream = provider.GetStream<int>(streamId, "GlobalNamespace");
             //var i = 0;
             for (int i = 0; i < 1000; i++)
             {

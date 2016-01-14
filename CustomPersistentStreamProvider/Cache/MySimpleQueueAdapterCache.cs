@@ -5,23 +5,24 @@ using Orleans.Providers.Streams.Common;
 using Orleans.Runtime;
 using Orleans.Streams;
 
-namespace PipeStreamProvider.MemoryCache
+namespace PipeStreamProvider.Cache
 {
     class MySimpleQueueAdapterCache : IQueueAdapterCache
     {
         private readonly Logger _logger;
         private readonly ConcurrentDictionary<QueueId, IQueueCache> _caches;
+        private readonly TimeSpan _timeToKeepMessages;
 
-
-        public MySimpleQueueAdapterCache(IQueueAdapterFactory factory, Logger logger)
+        public MySimpleQueueAdapterCache(IQueueAdapterFactory factory, TimeSpan timeToKeepMessages, Logger logger)
         {
-            this._logger = logger;
+            _timeToKeepMessages = timeToKeepMessages;
+            _logger = logger;
             _caches = new ConcurrentDictionary<QueueId, IQueueCache>();
         }
 
         public IQueueCache CreateQueueCache(QueueId queueId)
         {
-            return _caches.AddOrUpdate(queueId, (id) => new QueueCache(id, _logger), (id, queueCache) => queueCache);
+            return _caches.AddOrUpdate(queueId, (id) => new QueueCache(id, _timeToKeepMessages, _logger), (id, queueCache) => queueCache);
         }
 
         public int Size

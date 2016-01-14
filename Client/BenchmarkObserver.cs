@@ -16,7 +16,7 @@ namespace Client
 
             var provider = GrainClient.GetStreamProvider(providerName);
             var stream = provider.GetStream<int>(streamId, "GlobalNamespace");
-            await stream.SubscribeAsync(this, new PipeStreamProvider.SimpleSequenceToken(0));
+            await stream.SubscribeAsync(this);
         }
 
         bool firstMessage = false;

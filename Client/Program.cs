@@ -22,10 +22,10 @@ namespace Client
             }
 
             Console.WriteLine("Waiting");
-            Task.Delay(2000).Wait();
+            Task.Delay(10000).Wait();
             Console.WriteLine("Starting");
 
-            BenchmarkRead();
+            TestRead();
 
             Console.ReadLine();
         }
@@ -40,10 +40,9 @@ namespace Client
         {
             //var testObserver = GrainClient.GrainFactory.GetGrain<ITestObserver>(0);
             var testObserver = new TestObserver();
-            testObserver.Subscribe1().Wait();
 
             testObserver = new TestObserver();
-            testObserver.Subscribe2().Wait();
+            testObserver.Subscribe().Wait();
         }
     }
 }

@@ -15,7 +15,6 @@ namespace PipeStreamProvider.PhysicalQueues
     {
         private readonly Logger _logger;
         public QueueId Id { get; }
-        private long _sequenceId;
         private readonly IProviderQueue _queueProvider;
 
         public GenericQueueAdapterReceiver(Logger logger, QueueId queueid, IProviderQueue queueProvider)
@@ -48,14 +47,13 @@ namespace PipeStreamProvider.PhysicalQueues
                     _logger.AutoWarn("The queue returned a null message. This shouldn't happen. Ignored.");
             }
 
-            var list = (from m in listOfMessages select SerializationManager.DeserializeFromByteArray<PipeQueueAdapterBatchContainer>(m));
-            var pipeQueueAdapterBatchContainers = list as IList<PipeQueueAdapterBatchContainer> ?? list.ToList();
-            foreach (var batchContainer in pipeQueueAdapterBatchContainers)
-                batchContainer.SimpleSequenceToken = new SimpleSequenceToken(_sequenceId++);
+            if (listOfMessages.Count == 0)
+                return null;
 
-            _logger.AutoVerbose($"Read {pipeQueueAdapterBatchContainers.Count} batch containers");
-            // TODO: Is this an expensive call?
-            return pipeQueueAdapterBatchContainers.ToList<IBatchContainer>();
+            _logger.AutoVerbose($"Read {listOfMessages.Count} batch containers");
+            var list = (from m in listOfMessages select SerializationManager.DeserializeFromByteArray<IBatchContainer>(m)).ToList();
+
+            return list;
         }
 
         public Task MessagesDeliveredAsync(IList<IBatchContainer> messages)

@@ -46,12 +46,15 @@ namespace PipeStreamProvider.PhysicalQueues
             {
                 throw new ArgumentNullException(nameof(events), "Trying to QueueMessageBatchAsync null data.");
             }
+            if (token != null)
+                _logger.AutoWarn("You should NOT pass a token to this type of stream when writing. Token ignored.");
 
             var queueId = _streamQueueMapper.GetQueueForStream(streamGuid, streamNamespace);
 
             var eventsAsObjects = events.Cast<object>().ToList();
 
-            var container = new PipeQueueAdapterBatchContainer(streamGuid, streamNamespace, eventsAsObjects, requestContext);
+            // Ignore the given token and create a token based on current time
+            var container = new PipeQueueAdapterBatchContainer(streamGuid, streamNamespace, eventsAsObjects, new TimeSequenceToken(DateTime.UtcNow),  requestContext);
 
             var bytes = SerializationManager.SerializeToByteArray(container);
 
