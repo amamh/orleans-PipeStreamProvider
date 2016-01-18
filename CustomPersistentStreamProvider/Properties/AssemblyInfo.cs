@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("PipeStreamProvider")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("A stream provider for orleans that caches messages for a certain time and can replay them. It used Redis as a backend.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Microsoft")]
+[assembly: AssemblyCompany("Ahmed Hassan")]
 [assembly: AssemblyProduct("PipeStreamProvider")]
 [assembly: AssemblyCopyright("Copyright © Microsoft 2015")]
 [assembly: AssemblyTrademark("")]
