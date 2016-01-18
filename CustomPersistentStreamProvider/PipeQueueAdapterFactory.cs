@@ -10,9 +10,9 @@ namespace PipeStreamProvider
 {
     public class PipeQueueAdapterFactory : IQueueAdapterFactory
     {
-        //private const string CacheSizeParam = "CacheSize";
-        //private const int DefaultCacheSize = 4096;
-        //private int _cacheSize;
+        private const string TimeLimitParam = "TimeLimit";
+        private const int DefaultTimeLimit = 30;
+        private int _timeLimit;
 
         private const string NumQueuesParam = "NumQueues";
         private const int DefaultNumQueues = 8; // keep as power of 2.
@@ -39,8 +39,6 @@ namespace PipeStreamProvider
         private Logger _logger;
         private HashRingBasedStreamQueueMapper _streamQueueMapper;
         private IQueueAdapterCache _adapterCache;
-        private ConnectionMultiplexer _redisConn; // TODO: Dispose
-        private IDatabase _redisDb;
         private IProviderConfiguration _config;
         private IServiceProvider _serviceProvider;
 
@@ -51,15 +49,14 @@ namespace PipeStreamProvider
             _config = config;
             _serviceProvider = serviceProvider;
 
-            // TODO: Read time to keep messages in cache
             // Cache size
-            //string cacheSizeString;
-            //_cacheSize = DefaultCacheSize;
-            //if (config.Properties.TryGetValue(CacheSizeParam, out cacheSizeString))
-            //{
-            //    if (!int.TryParse(cacheSizeString, out _cacheSize))
-            //        throw new ArgumentException($"{CacheSizeParam} invalid.  Must be int");
-            //}
+            string timeLimitString;
+            _timeLimit = DefaultTimeLimit;
+            if (config.Properties.TryGetValue(TimeLimitParam, out timeLimitString))
+            {
+                if (!int.TryParse(timeLimitString, out _timeLimit))
+                    throw new ArgumentException($"{TimeLimitParam} invalid.  Must be int");
+            }
 
             // # queues
             string numQueuesString;
@@ -141,8 +138,7 @@ namespace PipeStreamProvider
 
         public IQueueAdapterCache GetQueueAdapterCache()
         {
-            // TODO: Read time span from config
-            return _adapterCache ?? (_adapterCache = new Cache.MySimpleQueueAdapterCache(this, TimeSpan.FromSeconds(30), _logger));
+            return _adapterCache ?? (_adapterCache = new Cache.MySimpleQueueAdapterCache(this, TimeSpan.FromSeconds(_timeLimit), _logger));
         }
 
         public IStreamQueueMapper GetStreamQueueMapper()
@@ -153,16 +149,6 @@ namespace PipeStreamProvider
         public Task<IStreamFailureHandler> GetDeliveryFailureHandler(QueueId queueId)
         {
             return Task.FromResult<IStreamFailureHandler>(new LoggerStreamFailureHandler(_logger));
-        }
-
-        private void MakeSureRedisConnected()
-        {
-            if (_redisConn?.IsConnected == true)
-                return;
-
-            // Note: using non-async Connect doesn't work
-            _redisConn = ConnectionMultiplexer.ConnectAsync(_server).Result;
-            _redisDb = _redisConn.GetDatabase(_databaseNum);
         }
     }
 }

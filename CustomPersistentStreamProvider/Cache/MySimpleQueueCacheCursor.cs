@@ -5,7 +5,6 @@ using Orleans.Runtime;
 using Orleans.Streams;
 using System.Diagnostics;
 
-// TODO: Remove unnecessary logging
 namespace PipeStreamProvider.Cache
 {
     public class QueueCacheCursor : IQueueCacheCursor
@@ -17,7 +16,6 @@ namespace PipeStreamProvider.Cache
         private readonly Guid _stream;
         private TimeSequenceToken _requestedToken;
         private LinkedListNode<PipeQueueAdapterBatchContainer> _current;
-        private bool _firstTime = true;
 
         public QueueCacheCursor(LinkedList<PipeQueueAdapterBatchContainer> cache, string streamNamespace, Guid streamGuid, TimeSequenceToken token, Logger logger)
         {
@@ -61,7 +59,6 @@ namespace PipeStreamProvider.Cache
                     _logger.AutoVerbose($"_cache is null: {_cache == null} , and has {_cache?.Count} messages");
                     if (_cache.First != null)
                     {
-                        _logger.AutoVerbose("Setting _current to first message in cache");
                         _current = _cache.First;
                         _logger.AutoVerbose("set _current to first message in cache");
 
@@ -102,13 +99,12 @@ namespace PipeStreamProvider.Cache
                 {
                     if (_current.Next == null) // end?
                     {
-                        _logger.AutoVerbose("no next, returning false");
+                        _logger.AutoVerbose3("no next, returning false");
                         return false;
                     }
 
-                    _logger.AutoVerbose("advancing to next");
                     _current = _current.Next;
-                    _logger.AutoVerbose("advanced to next");
+                    _logger.AutoVerbose3("advanced to next");
                     // Find batch with the same token, no this namespace and for this stream
                     if (_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream)
                     {
@@ -116,7 +112,7 @@ namespace PipeStreamProvider.Cache
                         return true;
                     }
                     else {
-                        _logger.AutoVerbose($"this message is NOT for this stream. This stream: {_namespace}-{_stream}, this message is for stream: {_current.Value?.StreamNamespace}-{_current.Value?.StreamGuid}");
+                        _logger.AutoVerbose3($"this message is NOT for this stream. This stream: {_namespace}-{_stream}, this message is for stream: {_current.Value?.StreamNamespace}-{_current.Value?.StreamGuid}");
                     }
                 }
             }
@@ -142,17 +138,17 @@ namespace PipeStreamProvider.Cache
             {
                 if (disposing)
                 {
-                    // TODO: dispose managed state (managed objects).
+                    // dispose managed state (managed objects).
                 }
 
-                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // TODO: set large fields to null.
+                // free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // set large fields to null.
 
                 disposedValue = true;
             }
         }
 
-        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        // override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
         // ~QueueCacheRedisCursor() {
         //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
         //   Dispose(false);
@@ -163,7 +159,7 @@ namespace PipeStreamProvider.Cache
         {
             // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
             Dispose(true);
-            // TODO: uncomment the following line if the finalizer is overridden above.
+            // uncomment the following line if the finalizer is overridden above.
             // GC.SuppressFinalize(this);
         }
         #endregion

@@ -20,9 +20,7 @@ namespace PipeStreamProvider.PhysicalQueues
         public GenericQueueAdapterReceiver(Logger logger, QueueId queueid, IProviderQueue queueProvider)
         {
             _queueProvider = queueProvider;
-
             _logger = logger;
-
             Id = queueid;
         }
 

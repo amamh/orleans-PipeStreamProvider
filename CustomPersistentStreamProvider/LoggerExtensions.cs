@@ -22,5 +22,13 @@ namespace PipeStreamProvider
         {
             logger.Verbose(code, $"{callerName}: {message}");
         }
+        public static void AutoVerbose2(this Logger logger, string message = "", int code = 0, [CallerMemberName] string callerName = "")
+        {
+            logger.Verbose2(code, $"{callerName}: {message}");
+        }
+        public static void AutoVerbose3(this Logger logger, string message = "", int code = 0, [CallerMemberName] string callerName = "")
+        {
+            logger.Verbose3(code, $"{callerName}: {message}");
+        }
     }
 }

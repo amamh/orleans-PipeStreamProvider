@@ -11,6 +11,7 @@ Currently, the main physical queue implmentation is using Redis and is used by d
 The in-memory queue will only work when writing from within the server (i.e. from a grain).
 
 # Config
+- `TimeLimit` how long to cache messages (in seconds) (default: 30)
 - `UseRedisForQueue="true"` to use Redis for the physical queue (default: "true")
 - Redis connection:
     - `Server` => Redis server (default: "localhost:6379")  

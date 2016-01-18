@@ -18,7 +18,7 @@ namespace PipeStreamProvider
         /// <summary>
         /// This should always use UTC time.
         /// </summary>
-        public DateTime Timestamp { get; set; }
+        public DateTime Timestamp { get; }
 
         public int EventIndex { get; set; }
 
@@ -72,7 +72,6 @@ namespace PipeStreamProvider
 
         public override string ToString()
         {
-            // TODO: Format time
             return string.Format(CultureInfo.InvariantCulture, "[TimeSequenceToken: Timestamp={0}, EventIndex={1}]", Timestamp, EventIndex);
         }
     }

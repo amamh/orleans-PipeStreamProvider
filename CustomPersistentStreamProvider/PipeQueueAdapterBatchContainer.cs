@@ -14,6 +14,9 @@ namespace PipeStreamProvider
         private readonly Dictionary<string, object> _requestContext;
         private readonly List<object> _events;
 
+        /// <summary>
+        /// A timestamp for this container
+        /// </summary>
         public TimeSequenceToken RealToken { get; }
 
         public Guid StreamGuid { get; }
