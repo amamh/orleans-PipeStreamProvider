@@ -26,10 +26,6 @@ namespace PipeStreamProvider
         private const int DefaultRedisDb = -1;
         private int _databaseNum;
 
-        private const string UseRedisForCacheParam = "UseRedisForCache";
-        private const bool DefaultUseRedisForCache = false;
-        private bool _useRedisForCache;
-
         // TODO: This should be an enum to choose which physical queue to use
         private const string UseRedisForQueueParam = "UseRedisForQueue";
         private const bool DefaultUseRedisForQueue = false;
@@ -65,15 +61,6 @@ namespace PipeStreamProvider
             {
                 if (!int.TryParse(numQueuesString, out _numQueues))
                     throw new ArgumentException($"{NumQueuesParam} invalid.  Must be int");
-            }
-
-            // Use Redis for cache?
-            string useRedisCache;
-            _useRedisForCache = DefaultUseRedisForCache;
-            if (config.Properties.TryGetValue(UseRedisForCacheParam, out useRedisCache))
-            {
-                if (!bool.TryParse(useRedisCache, out _useRedisForCache))
-                    throw new ArgumentException($"{UseRedisForCacheParam} invalid value {useRedisCache}");
             }
 
             // Use Redis for queue?
