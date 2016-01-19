@@ -42,7 +42,7 @@ namespace Client
             var testObserver = new TestObserver();
 
             testObserver = new TestObserver();
-            testObserver.Subscribe().Wait();
+            testObserver.Subscribe(true).Wait();
         }
     }
 }

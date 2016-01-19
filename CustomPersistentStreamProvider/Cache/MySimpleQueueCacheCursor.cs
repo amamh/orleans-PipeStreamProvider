@@ -57,42 +57,45 @@ namespace PipeStreamProvider.Cache
                 {
                     _logger.AutoVerbose("_current is null, must be first time calling MoveNext or cache is empty");
                     _logger.AutoVerbose($"_cache is null: {_cache == null} , and has {_cache?.Count} messages");
-                    if (_cache.First != null)
-                    {
-                        _current = _cache.First;
-                        _logger.AutoVerbose("set _current to first message in cache");
 
-                        // fast-forward based on requested token:
-                        while (_current.Value.RealToken.Older(_requestedToken) == true)
-                        {
-                            if (_current.Next == null) // nothing more to fast forward
-                                return false;
-
-                            _current = _current.Next;
-                        }
-
-                        if (
-                            _current.Value?.StreamNamespace == _namespace
-                            && _current.Value?.StreamGuid == _stream
-                            )
-                        {
-                            return true;
-                        }
-                    }
-                    else
+                    // No messages?
+                    if (_cache.First == null)
                     {
                         _logger.AutoVerbose("Cache is empty");
                         return false;
                     }
+
+                    _current = _cache.First;
+                    _logger.AutoVerbose("set _current to first message in cache");
+
+                    // fast-forward based on requested token:
+                    while (_current.Value.RealToken.Older(_requestedToken))
+                    {
+                        if (_current.Next == null) // nothing more to fast forward
+                            return false;
+
+                        _current = _current.Next;
+                    }
+
+                    if (_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream)
+                    {
+                        return true;
+                    }
                 }
 
                 // check if we need to fast-forward
-                while (_current.Value.RealToken.Older(_requestedToken) == true)
+                if (_current.Value.RealToken.Older(_requestedToken))
                 {
-                    if (_current.Next == null) // nothing more to fast-forward
-                        return false;
+                    while (_current.Value.RealToken.Older(_requestedToken))
+                    {
+                        if (_current.Next == null) // nothing more to fast-forward
+                            return false;
 
-                    _current = _current.Next;
+                        _current = _current.Next;
+                    }
+                    // We have fast-forwarded at least once, do we have a relevant batch now?
+                    if (_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream)
+                        return true;
                 }
 
                 while (true)

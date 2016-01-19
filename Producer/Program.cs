@@ -35,12 +35,11 @@ namespace Producer
 
             var provider = GrainClient.GetStreamProvider(providerName);
             var stream = provider.GetStream<int>(streamId, "GlobalNamespace");
-            //var i = 0;
             for (int i = 0; i < 1000; i++)
             {
-                Task.Delay(500).Wait();
+                Task.Delay(1000).Wait();
                 stream.OnNextAsync(i);
-                Console.WriteLine($"Writing....: {i}\t\t{DateTime.UtcNow.Millisecond}");
+                Console.WriteLine($"Writing....: {i}");
             }
         }
 
