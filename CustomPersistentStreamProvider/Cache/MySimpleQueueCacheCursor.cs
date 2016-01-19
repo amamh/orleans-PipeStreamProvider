@@ -25,7 +25,7 @@ namespace PipeStreamProvider.Cache
             _cache = cache;
             _namespace = streamNamespace;
             _stream = streamGuid;
-            _requestedToken = token ?? new TimeSequenceToken(DateTime.UtcNow);
+            _requestedToken = token;
             _logger = logger;
             _current = null;
         }
@@ -44,11 +44,13 @@ namespace PipeStreamProvider.Cache
             }
         }
 
+        // TODO optimise: Check for _requestedToken only the first time. Ignore _requestedToken for any further MoveNext calls
         public bool MoveNext()
         {
             // Client is asking for a token that we haven't received yet?
-            if (_requestedToken != null && _cache.Last != null && _requestedToken.Newer(_cache.Last.Value.RealToken))
-                return false;
+            if (_requestedToken != null)
+                if (_cache.Last != null && _requestedToken.Newer(_cache.Last.Value.RealToken))
+                    return false;
 
             try
             {
@@ -69,13 +71,14 @@ namespace PipeStreamProvider.Cache
                     _logger.AutoVerbose("set _current to first message in cache");
 
                     // fast-forward based on requested token:
-                    while (_current.Value.RealToken.Older(_requestedToken))
-                    {
-                        if (_current.Next == null) // nothing more to fast forward
-                            return false;
+                    if (_requestedToken != null)
+                        while (_current.Value.RealToken.Older(_requestedToken))
+                        {
+                            if (_current.Next == null) // nothing more to fast forward
+                                return false;
 
-                        _current = _current.Next;
-                    }
+                            _current = _current.Next;
+                        }
 
                     if (_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream)
                     {
@@ -84,19 +87,20 @@ namespace PipeStreamProvider.Cache
                 }
 
                 // check if we need to fast-forward
-                if (_current.Value.RealToken.Older(_requestedToken))
-                {
-                    while (_current.Value.RealToken.Older(_requestedToken))
+                if (_requestedToken != null)
+                    if (_current.Value.RealToken.Older(_requestedToken))
                     {
-                        if (_current.Next == null) // nothing more to fast-forward
-                            return false;
+                        while (_current.Value.RealToken.Older(_requestedToken))
+                        {
+                            if (_current.Next == null) // nothing more to fast-forward
+                                return false;
 
-                        _current = _current.Next;
+                            _current = _current.Next;
+                        }
+                        // We have fast-forwarded at least once, do we have a relevant batch now?
+                        if (_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream)
+                            return true;
                     }
-                    // We have fast-forwarded at least once, do we have a relevant batch now?
-                    if (_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream)
-                        return true;
-                }
 
                 while (true)
                 {
