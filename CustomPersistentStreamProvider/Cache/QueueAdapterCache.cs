@@ -7,13 +7,13 @@ using Orleans.Streams;
 
 namespace PipeStreamProvider.Cache
 {
-    class MySimpleQueueAdapterCache : IQueueAdapterCache
+    class QueueAdapterCache : IQueueAdapterCache
     {
         private readonly Logger _logger;
         private readonly ConcurrentDictionary<QueueId, IQueueCache> _caches;
         private readonly TimeSpan _timeToKeepMessages;
 
-        public MySimpleQueueAdapterCache(IQueueAdapterFactory factory, TimeSpan timeToKeepMessages, Logger logger)
+        public QueueAdapterCache(IQueueAdapterFactory factory, TimeSpan timeToKeepMessages, Logger logger)
         {
             _timeToKeepMessages = timeToKeepMessages;
             _logger = logger;

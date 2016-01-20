@@ -62,9 +62,9 @@
     <Compile Include="PhysicalQueues\GenericQueueAdapterReceiver.cs" />
     <Compile Include="PhysicalQueues\Redis\RedisQueueProvider.cs" />
     <Compile Include="LoggerExtensions.cs" />
-    <Compile Include="Cache\MySimpleQueueCache.cs" />
-    <Compile Include="Cache\MySimpleQueueCacheCursor.cs" />
-    <Compile Include="Cache\MySimpleQueueAdapterCache.cs" />
+    <Compile Include="Cache\QueueCache.cs" />
+    <Compile Include="Cache\QueueCacheCursor.cs" />
+    <Compile Include="Cache\QueueAdapterCache.cs" />
     <Compile Include="LoggerStreamFailureHandler.cs" />
     <Compile Include="PipeQueueAdapterBatchContainer.cs" />
     <Compile Include="PipeQueueAdapterFactory.cs" />

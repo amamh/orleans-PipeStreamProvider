@@ -125,7 +125,7 @@ namespace PipeStreamProvider
 
         public IQueueAdapterCache GetQueueAdapterCache()
         {
-            return _adapterCache ?? (_adapterCache = new Cache.MySimpleQueueAdapterCache(this, TimeSpan.FromSeconds(_timeLimit), _logger));
+            return _adapterCache ?? (_adapterCache = new Cache.QueueAdapterCache(this, TimeSpan.FromSeconds(_timeLimit), _logger));
         }
 
         public IStreamQueueMapper GetStreamQueueMapper()
