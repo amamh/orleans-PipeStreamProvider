@@ -31,17 +31,9 @@ namespace PipeStreamProvider.Cache
         }
         public IBatchContainer GetCurrent(out Exception exception)
         {
-            try
-            {
-                exception = null;
-                _logger.AutoVerbose($"Returning {_current?.Value}, with token {_current?.Value.SequenceToken}");
-                return _current.Value;
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-                throw;
-            }
+            exception = null;
+            _logger.AutoVerbose($"Returning {_current?.Value}, with token {_current?.Value.SequenceToken}");
+            return _current?.Value;
         }
 
         public bool MoveNext()
@@ -75,7 +67,7 @@ namespace PipeStreamProvider.Cache
                         while (
                             _current.Value.RealToken.Older(_requestedToken) // has to be after this time
                             ||
-                            !(_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream) // has to be relevent to this stream
+                            !InStream(_current) // has to be relevent to this stream
                             )
                         {
                             if (_current.Next == null) // nothing more to fast forward
@@ -92,7 +84,7 @@ namespace PipeStreamProvider.Cache
                         // Start at the end and rewind to the last relevant message:
                         _current = _cache.Last;
                         // Rewind until we find a relevant one
-                        while (!(_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream))
+                        while (!InStream(_current))
                         {
                             if (_current.Previous == null) // no more?
                             {
@@ -121,7 +113,7 @@ namespace PipeStreamProvider.Cache
                     _current = _current.Next;
                     _logger.AutoVerbose3("advanced to next");
                     // Find batch with the same token, no this namespace and for this stream
-                    if (_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream)
+                    if (InStream(_current))
                     {
                         _logger.AutoVerbose("this message is for this stream, returning true");
                         return true;
@@ -140,7 +132,12 @@ namespace PipeStreamProvider.Cache
 
         public void Refresh()
         {
-            // nothing to do here
+            // TODO: We need to do anything here !???
+        }
+
+        private bool InStream(LinkedListNode<PipeQueueAdapterBatchContainer> node)
+        {
+            return node.Value?.StreamNamespace == _namespace && node.Value?.StreamGuid == _stream;
         }
 
         #region IDisposable Support

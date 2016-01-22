@@ -17,7 +17,7 @@ namespace PipeStreamProviderTests
         private Guid _streamGuid, _anotherStreamGuid;
         private string _streamNamespace, _anotherStreamNamespace;
         private List<object> _someEvents;
-        private List<IBatchContainer> _someBatches;
+        private List<IBatchContainer> _someBatches, _otherBatches;
         private Mock<Logger> _mockLogger;
 
         [TestInitialize]
@@ -26,7 +26,7 @@ namespace PipeStreamProviderTests
             _streamGuid = Guid.NewGuid();
             _anotherStreamGuid = Guid.NewGuid();
             _streamNamespace = "global";
-            _anotherStreamNamespace= "global2";
+            _anotherStreamNamespace = "global2";
             _mockLogger = new Mock<Logger>();
 
             // Create some batches
@@ -35,8 +35,10 @@ namespace PipeStreamProviderTests
             var timeStamps = from s in Enumerable.Range(0, count) select (DateTime.UtcNow - TimeSpan.FromSeconds(count - s - 1));
             var tokens = from t in timeStamps select new TimeSequenceToken(t);
             var batches = from t in tokens select new PipeQueueAdapterBatchContainer(_streamGuid, _streamNamespace, _someEvents, t, null);
+            var otherBatches = from t in tokens select new PipeQueueAdapterBatchContainer(_anotherStreamGuid, _streamNamespace, _someEvents, t, null);
 
             _someBatches = batches.ToList<IBatchContainer>();
+            _otherBatches = otherBatches.ToList<IBatchContainer>();
         }
 
         [TestMethod]
@@ -165,7 +167,6 @@ namespace PipeStreamProviderTests
         [TestMethod]
         public void ReplayFromStart()
         {
-            // 2 secs to purge
             var timeToPurge = TimeSpan.FromSeconds(5);
             var cache = new QueueCache(QueueId.GetQueueId(0), timeToPurge, _mockLogger.Object);
             cache.AddToCache(_someBatches);
@@ -193,7 +194,6 @@ namespace PipeStreamProviderTests
         [TestMethod]
         public void ReplayFromSpecificPoint()
         {
-            // 2 secs to purge
             var timeToPurge = TimeSpan.FromSeconds(5);
             var cache = new QueueCache(QueueId.GetQueueId(0), timeToPurge, _mockLogger.Object);
             cache.AddToCache(_someBatches);
@@ -206,6 +206,75 @@ namespace PipeStreamProviderTests
             var cursor = cache.GetCacheCursor(_streamGuid, _streamNamespace, token);
 
             foreach (var b in batchesShouldBeReplayed)
+            {
+                // Move
+                Assert.IsTrue(cursor.MoveNext());
+                // Read the same batch
+                Exception ex;
+                Assert.IsTrue(b == cursor.GetCurrent(out ex));
+                Assert.IsTrue(ex == null);
+            }
+
+            // Can't move any more
+            Assert.IsFalse(cursor.MoveNext());
+        }
+
+        [TestMethod]
+        public void NoMessagesWhenTokenRequestedIsTooNew()
+        {
+            var timeToPurge = TimeSpan.FromSeconds(5);
+            var cache = new QueueCache(QueueId.GetQueueId(0), timeToPurge, _mockLogger.Object);
+            cache.AddToCache(_someBatches);
+
+            // get last token:
+            var lastToken = (_someBatches.Last() as PipeQueueAdapterBatchContainer).RealToken;
+            var newerToken = new TimeSequenceToken(lastToken.Timestamp.AddMilliseconds(1));
+
+            var cursor = cache.GetCacheCursor(_streamGuid, _streamNamespace, newerToken);
+            Assert.IsFalse(cursor.MoveNext());
+        }
+
+        [TestMethod]
+        public void EmptyCacheSouldntMoveAndShouldReturnNull()
+        {
+            var timeToPurge = TimeSpan.FromSeconds(5);
+            var cache = new QueueCache(QueueId.GetQueueId(0), timeToPurge, _mockLogger.Object);
+
+            Exception ex;
+            var cursor = cache.GetCacheCursor(_streamGuid, _streamNamespace, null);
+            Assert.IsFalse(cursor.MoveNext());
+            Assert.IsNull(cursor.GetCurrent(out ex));
+            Assert.IsNull(ex);
+
+
+            cursor = cache.GetCacheCursor(_streamGuid, _streamNamespace, new TimeSequenceToken(DateTime.Today));
+            Assert.IsFalse(cursor.MoveNext());
+            Assert.IsNull(cursor.GetCurrent(out ex));
+            Assert.IsNull(ex);
+        }
+
+        [TestMethod]
+        public void ReplayOnlyRelevantMessages()
+        {
+            var timeToPurge = TimeSpan.FromSeconds(10);
+            var cache = new QueueCache(QueueId.GetQueueId(0), timeToPurge, _mockLogger.Object);
+
+            // add batches for this stream:
+            cache.AddToCache(_someBatches.Take(5).ToList());
+            // add batches for another stream:
+            cache.AddToCache(_otherBatches.Take(5).ToList());
+            // add batches for this stream:
+            cache.AddToCache(_someBatches.Skip(5).ToList());
+            // add batches for another stream:
+            cache.AddToCache(_otherBatches.Skip(5).ToList());
+
+            var firstBatch = _someBatches.First() as PipeQueueAdapterBatchContainer;
+            var token = firstBatch.RealToken;
+            // We only want to read messages for stream with this GUID in this namespace:
+            var cursor = cache.GetCacheCursor(_streamGuid, _streamNamespace, new TimeSequenceToken(DateTime.Today));
+
+            // check that we read only the relevant batches for this stream
+            foreach (var b in _someBatches)
             {
                 // Move
                 Assert.IsTrue(cursor.MoveNext());
