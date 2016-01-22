@@ -44,7 +44,6 @@ namespace PipeStreamProvider.Cache
             }
         }
 
-        // TODO optimise: Check for _requestedToken only the first time. Ignore _requestedToken for any further MoveNext calls
         public bool MoveNext()
         {
             // Client is asking for a token that we haven't received yet?
@@ -72,35 +71,44 @@ namespace PipeStreamProvider.Cache
 
                     // fast-forward based on requested token:
                     if (_requestedToken != null)
-                        while (_current.Value.RealToken.Older(_requestedToken))
+                    {
+                        while (
+                            _current.Value.RealToken.Older(_requestedToken) // has to be after this time
+                            ||
+                            !(_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream) // has to be relevent to this stream
+                            )
                         {
                             if (_current.Next == null) // nothing more to fast forward
                                 return false;
 
                             _current = _current.Next;
                         }
-
-                    if (_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream)
+                        // We have found the oldest relevant message received after the time of _requestedToken
+                        return true;
+                    }
+                    // no token given, set to the last relevant messsage
+                    else
                     {
+                        // Start at the end and rewind to the last relevant message:
+                        _current = _cache.Last;
+                        // Rewind until we find a relevant one
+                        while (!(_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream))
+                        {
+                            if (_current.Previous == null) // no more?
+                            {
+                                // set to last message and return false
+                                _current = _cache.Last;
+                                return false;
+                            }
+                            else
+                            {
+                                _current = _current.Previous;
+                            }
+                        }
+                        // We have found the last relevant one:
                         return true;
                     }
                 }
-
-                // check if we need to fast-forward
-                if (_requestedToken != null)
-                    if (_current.Value.RealToken.Older(_requestedToken))
-                    {
-                        while (_current.Value.RealToken.Older(_requestedToken))
-                        {
-                            if (_current.Next == null) // nothing more to fast-forward
-                                return false;
-
-                            _current = _current.Next;
-                        }
-                        // We have fast-forwarded at least once, do we have a relevant batch now?
-                        if (_current.Value?.StreamNamespace == _namespace && _current.Value?.StreamGuid == _stream)
-                            return true;
-                    }
 
                 while (true)
                 {
