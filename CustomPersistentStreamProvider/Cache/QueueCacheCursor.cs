@@ -16,6 +16,11 @@ namespace PipeStreamProvider.Cache
         private readonly Guid _stream;
         private TimeSequenceToken _requestedToken;
         private LinkedListNode<PipeQueueAdapterBatchContainer> _current;
+        /// <summary>
+        /// What the cursor is currently on
+        /// </summary>
+        public TimeSequenceToken CurrentToken => _current?.Value.RealToken;
+        public bool IsSet { get; set; }
 
         public QueueCacheCursor(LinkedList<PipeQueueAdapterBatchContainer> cache, string streamNamespace, Guid streamGuid, TimeSequenceToken token, Logger logger)
         {
@@ -29,6 +34,7 @@ namespace PipeStreamProvider.Cache
             _logger = logger;
             _current = null;
         }
+
         public IBatchContainer GetCurrent(out Exception exception)
         {
             exception = null;
@@ -46,7 +52,7 @@ namespace PipeStreamProvider.Cache
             try
             {
                 // if this is the first time
-                if (_current == null)
+                if (!IsSet)
                 {
                     _logger.AutoVerbose("_current is null, must be first time calling MoveNext or cache is empty");
                     _logger.AutoVerbose($"_cache is null: {_cache == null} , and has {_cache?.Count} messages");
@@ -59,6 +65,7 @@ namespace PipeStreamProvider.Cache
                     }
 
                     _current = _cache.First;
+                    IsSet = true;
                     _logger.AutoVerbose("set _current to first message in cache");
 
                     // fast-forward based on requested token:

@@ -11,6 +11,7 @@ namespace PipeStreamProvider.Cache
     {
         private readonly Logger _logger;
         private readonly LinkedList<PipeQueueAdapterBatchContainer> _cache;
+        private readonly LinkedList<QueueCacheCursor> _cursors;
         private readonly TimeSpan _timeUntilObsolete;
 
         public QueueId Id { get; }
@@ -24,6 +25,7 @@ namespace PipeStreamProvider.Cache
             _timeUntilObsolete = timeUntilObsolete;
             _logger = logger;
             _cache = new LinkedList<PipeQueueAdapterBatchContainer>();
+            _cursors = new LinkedList<QueueCacheCursor>();
         }
 
         public void AddToCache(IList<IBatchContainer> messages)
@@ -40,18 +42,32 @@ namespace PipeStreamProvider.Cache
 
         private int PurgeOld()
         {
+            var timeNow = DateTime.UtcNow;
             var numPurged = 0;
-            while (true)
+            while ((timeNow - _cache.First?.Value?.RealToken.Timestamp) > _timeUntilObsolete)
             {
-                if ((DateTime.UtcNow - _cache.First?.Value?.RealToken.Timestamp) > _timeUntilObsolete)
-                {
-                    // FIXME: What if there are cursors on this node?
-                    _cache.RemoveFirst();
-                    numPurged++;
-                }
-                else
-                    break;
+                _cache.RemoveFirst();
+                numPurged++;
             }
+            // advance delayed cursors:
+            var earliestBatch = _cache.First;
+
+
+            if (earliestBatch == null)
+            {
+                Debug.Assert(_cache.Count == 0);
+                // Unset all cursors
+                foreach (var cursor in _cursors)
+                    cursor.IsSet = false;
+            }
+            else {
+                foreach (var cursor in _cursors)
+                    if (cursor.CurrentToken.Older(earliestBatch.Value.RealToken))
+                        cursor.IsSet = false;
+            }
+
+
+            // TODO: Log
             return numPurged;
         }
 
@@ -63,7 +79,9 @@ namespace PipeStreamProvider.Cache
                 throw new ArgumentOutOfRangeException(nameof(token), "token must be of type TimeSequenceToken");
             }
 
-            return new QueueCacheCursor(_cache, streamNamespace, streamGuid, (TimeSequenceToken)token, _logger);
+            var cursor = new QueueCacheCursor(_cache, streamNamespace, streamGuid, (TimeSequenceToken)token, _logger);
+            _cursors.AddLast(cursor);
+            return cursor;
         }
 
         public bool IsUnderPressure()
