@@ -62,8 +62,13 @@ namespace PipeStreamProvider.Cache
             }
             else {
                 foreach (var cursor in _cursors)
-                    if (cursor.CurrentToken.Older(earliestBatch.Value.RealToken))
-                        cursor.IsSet = false;
+                    if (cursor.CurrentToken != null)
+                    {
+                        if (cursor.CurrentToken.Older(earliestBatch.Value.RealToken))
+                            cursor.IsSet = false;
+                    }
+                    else
+                        Debug.Assert(!cursor.IsSet);
             }
 
 

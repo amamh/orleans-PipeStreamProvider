@@ -296,7 +296,7 @@ namespace PipeStreamProviderTests
         /// When a client cannot read fast enough and the last message it was on gets purged, it should be pushed forward
         /// </summary>
         [TestMethod]
-        public void LaggingCursorShouldBeForwardedWhenMessagesArePurged()
+        public void LaggingCursorShouldBeForwardedWhenSomeMessagesArePurged()
         {
             var timeToPurge = TimeSpan.FromSeconds(7);
             var cache = new QueueCache(QueueId.GetQueueId(0), timeToPurge, _mockLogger.Object);
@@ -307,6 +307,69 @@ namespace PipeStreamProviderTests
 
             // Set it on first message:
             cursor.MoveNext();
+            var moreBatches = _someBatches.Skip(5).ToList();
+            // trigger purge by adding again, the previous batches are 10, 9, ..., 6 seconds old so the earliest 3 will be purged given 7 seconds to purge
+            cache.AddToCache(moreBatches);
+            Assert.IsTrue(cache.Size == timeToPurge.Seconds);
+            // cursor now should be forwarded and should read batches at indices: 3, 4, .. count-1
+            Exception ex;
+            foreach (var b in _someBatches.Skip(3))
+            {
+                Assert.IsTrue(cursor.MoveNext());
+                var current = cursor.GetCurrent(out ex);
+                Assert.IsTrue(b == current);
+                Assert.IsNull(ex);
+            }
+            // no more
+            Assert.IsFalse(cursor.MoveNext());
+        }
+
+        /// <summary>
+        /// When a client cannot read fast enough and the last message it was on gets purged, it should be pushed forward
+        /// </summary>
+        [TestMethod]
+        public void LaggingCursorShouldBeForwardedWhenAllMessagesArePurged()
+        {
+            var timeToPurge = TimeSpan.FromSeconds(1);
+            var cache = new QueueCache(QueueId.GetQueueId(0), timeToPurge, _mockLogger.Object);
+            cache.AddToCache(_someBatches.Take(5).ToList());
+
+            // get a cursor on the first message:
+            var cursor = cache.GetCacheCursor(_streamGuid, _streamNamespace, new TimeSequenceToken(DateTime.Today));
+
+            // Set it on first message:
+            cursor.MoveNext();
+            var moreBatches = _someBatches.Skip(5).ToList();
+            // trigger purge by adding again, all previous messages should be purged now
+            cache.AddToCache(moreBatches);
+            // Only new messages should exist
+            Assert.IsTrue(cache.Size == moreBatches.Count);
+            // cursor now should be forwarded and should read batches at indices: 3, 4, .. count-1
+            Exception ex;
+            foreach (var b in moreBatches)
+            {
+                Assert.IsTrue(cursor.MoveNext());
+                var current = cursor.GetCurrent(out ex);
+                Assert.IsTrue(b == current);
+                Assert.IsNull(ex);
+            }
+            // no more
+            Assert.IsFalse(cursor.MoveNext());
+        }
+
+        /// <summary>
+        /// When a client has just been added and then messages are purged before it starts reading
+        /// </summary>
+        [TestMethod]
+        public void NewCursorShouldBeForwardedWhenMessagesArePurged()
+        {
+            var timeToPurge = TimeSpan.FromSeconds(7);
+            var cache = new QueueCache(QueueId.GetQueueId(0), timeToPurge, _mockLogger.Object);
+            cache.AddToCache(_someBatches.Take(5).ToList());
+
+            // get a cursor on the first message:
+            var cursor = cache.GetCacheCursor(_streamGuid, _streamNamespace, new TimeSequenceToken(DateTime.Today));
+
             var moreBatches = _someBatches.Skip(5).ToList();
             // trigger purge by adding again, the previous batches are 10, 9, ..., 6 seconds old so the earliest 3 will be purged given 7 seconds to purge
             cache.AddToCache(moreBatches);
