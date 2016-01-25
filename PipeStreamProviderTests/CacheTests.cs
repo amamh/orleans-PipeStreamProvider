@@ -300,7 +300,8 @@ namespace PipeStreamProviderTests
         {
             var timeToPurge = TimeSpan.FromSeconds(7);
             var cache = new QueueCache(QueueId.GetQueueId(0), timeToPurge, _mockLogger.Object);
-            cache.AddToCache(_someBatches.Take(5).ToList());
+            var firstBatches = _someBatches.Take(5);
+            cache.AddToCache(firstBatches.ToList());
 
             // get a cursor on the first message:
             var cursor = cache.GetCacheCursor(_streamGuid, _streamNamespace, new TimeSequenceToken(DateTime.Today));
@@ -309,11 +310,16 @@ namespace PipeStreamProviderTests
             cursor.MoveNext();
             var moreBatches = _someBatches.Skip(5).ToList();
             // trigger purge by adding again, the previous batches are 10, 9, ..., 6 seconds old so the earliest 3 will be purged given 7 seconds to purge
+            var timeNow = DateTime.UtcNow;
             cache.AddToCache(moreBatches);
-            Assert.IsTrue(cache.Size == timeToPurge.Seconds);
+
+            var purged = firstBatches.Count(x => (timeNow - (x.SequenceToken as TimeSequenceToken).Timestamp) > timeToPurge);
+            var countRemains = firstBatches.Count() - purged;
+
+            Assert.IsTrue(cache.Size == countRemains + moreBatches.Count);
             // cursor now should be forwarded and should read batches at indices: 3, 4, .. count-1
             Exception ex;
-            foreach (var b in _someBatches.Skip(3))
+            foreach (var b in _someBatches.Skip(purged))
             {
                 Assert.IsTrue(cursor.MoveNext());
                 var current = cursor.GetCurrent(out ex);
@@ -365,18 +371,24 @@ namespace PipeStreamProviderTests
         {
             var timeToPurge = TimeSpan.FromSeconds(7);
             var cache = new QueueCache(QueueId.GetQueueId(0), timeToPurge, _mockLogger.Object);
-            cache.AddToCache(_someBatches.Take(5).ToList());
+            var firstBatches = _someBatches.Take(5);
+            cache.AddToCache(firstBatches.ToList());
 
             // get a cursor on the first message:
             var cursor = cache.GetCacheCursor(_streamGuid, _streamNamespace, new TimeSequenceToken(DateTime.Today));
 
             var moreBatches = _someBatches.Skip(5).ToList();
             // trigger purge by adding again, the previous batches are 10, 9, ..., 6 seconds old so the earliest 3 will be purged given 7 seconds to purge
+            var timeNow = DateTime.UtcNow;
             cache.AddToCache(moreBatches);
-            Assert.IsTrue(cache.Size == timeToPurge.Seconds);
+
+            var purged = firstBatches.Count(x => (timeNow - (x.SequenceToken as TimeSequenceToken).Timestamp) > timeToPurge);
+            var countRemains = firstBatches.Count() - purged;
+
+            Assert.IsTrue(cache.Size == countRemains + moreBatches.Count);
             // cursor now should be forwarded and should read batches at indices: 3, 4, .. count-1
             Exception ex;
-            foreach (var b in _someBatches.Skip(3))
+            foreach (var b in _someBatches.Skip(purged))
             {
                 Assert.IsTrue(cursor.MoveNext());
                 var current = cursor.GetCurrent(out ex);
