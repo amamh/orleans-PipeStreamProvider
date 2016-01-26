@@ -117,7 +117,9 @@ namespace PipeStreamProvider
             else
             {
                 var memoryQueueProvider = new PhysicalQueues.Memory.MemoryQueueProvider();
-                adapter = new PhysicalQueues.GenericQueueAdapter(_logger, GetStreamQueueMapper(), _providerName, _config, memoryQueueProvider, _numQueues);
+                var memoryAdapter = new PhysicalQueues.GenericQueueAdapter(_logger, GetStreamQueueMapper(), _providerName, _config, memoryQueueProvider, _numQueues);
+                await memoryAdapter.Init();
+                adapter = memoryAdapter;
             }
 
             return adapter;
