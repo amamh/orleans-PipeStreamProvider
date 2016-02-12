@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrleansServer", "OrleansSer
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{42853F0A-E53A-4537-8F50-4BE5FD1A8C93}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipeStreamProvider", "CustomPersistentStreamProvider\PipeStreamProvider.csproj", "{032B1FDF-A8E7-4111-87E1-38785B8841B5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PipeStreamProvider", "PipeStreamProvider\PipeStreamProvider.csproj", "{032B1FDF-A8E7-4111-87E1-38785B8841B5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9B0DBFF6-AB46-405E-918B-E6A3C7085DAB}"
 	ProjectSection(SolutionItems) = preProject

@@ -83,7 +83,7 @@
     <Compile Include="Properties\orleans.codegen.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CustomPersistentStreamProvider\PipeStreamProvider.csproj">
+    <ProjectReference Include="..\PipeStreamProvider\PipeStreamProvider.csproj">
       <Project>{032b1fdf-a8e7-4111-87e1-38785b8841b5}</Project>
       <Name>PipeStreamProvider</Name>
     </ProjectReference>
