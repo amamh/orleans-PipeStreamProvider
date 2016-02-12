@@ -1,0 +1,1 @@
+nuget push PipeStreamProvider.1.0.0.0.symbols.nupkg nuget:nuget -Source http://169.172.134.41:81/nuget/default

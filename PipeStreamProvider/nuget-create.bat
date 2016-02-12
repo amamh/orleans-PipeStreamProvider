@@ -1,0 +1,1 @@
+nuget pack PipeStreamProvider.csproj -Prop Configuration=Release -Symbols
